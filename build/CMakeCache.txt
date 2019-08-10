@@ -180,9 +180,6 @@ SAI2-MODEL_DIR:PATH=/home/allegrograsping/Codes/sai2-model/build
 //The directory containing a CMake configuration file for SAI2-URDF.
 SAI2-URDF_DIR:PATH=/home/allegrograsping/Codes/sai2-urdfreader/build
 
-//The directory containing a CMake configuration file for sai2_model.
-sai2_model_DIR:PATH=sai2_model_DIR-NOTFOUND
-
 
 ########################
 # INTERNAL cache entries
