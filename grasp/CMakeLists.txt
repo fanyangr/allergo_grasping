@@ -5,4 +5,4 @@ target_link_libraries (grasp_driver BHand pcanbasic pthread hiredis ${ALL_LIBS})
 
 # export resources such as model files.
 # NOTE: this requires an install build
-FILE(COPY pbot.urdf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(COPY hand.urdf DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

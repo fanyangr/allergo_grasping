@@ -318,6 +318,12 @@ static void* ioThreadProc(void* inst)
 		      {
 			q[i] = (double)(vars.enc_actual[i]*enc_dir[i]-32768-enc_offset[i])*(333.3/65536.0)*(3.141592/180.0);
 		      }
+        // cout << "here is the q: \n" ;
+        // for (int j=0; j < MAX_DOF; j++)
+        // {
+        //   cout << q_des[j] << endl;
+        // }
+        // cout << endl;
 
         // compute joint torque
         if(custom_PD)

@@ -1,0 +1,584 @@
+<?xml version="1.0" ?>
+<robot name="hand3finger">
+    <link name="base_link">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+
+    <link name="virtual_link1">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+    <link name="virtual_link2">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+    <link name="virtual_link3">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+    <link name="virtual_link4">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+    <link name="virtual_link5">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00001" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+    <link name="palm">
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.5"/>
+            <inertia ixx="0.0025"  iyy="0.002" izz="0.003" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.095 0.11 0.055" />
+            </geometry>
+            <material name="material_blue">
+                <color rgba="0.5 0.5 0.7.0 1.0" />
+            </material>
+        </visual>
+    </link>
+
+<!-- finger 0 -->
+
+    <link name="finger0-link0">
+        <inertial>
+            <origin xyz="0 -0.018 -0.01" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0 -0.018 -0.01" rpy="0 0 0" />
+            <geometry>
+                <box size="0.036 0.036 0.036" />
+            </geometry>
+            <material name="material_white">
+                <color rgba="0.7 0.7 0.7 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger0-link1">
+        <inertial>
+            <origin xyz="0.0 -0.0075 0" rpy="0 0 0"/>
+            <mass value="0.01"/>
+            <inertia ixx="0.000003"  iyy="0.0000084" izz="0.0000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0 -0.0075 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.016 0.015 0.025" />
+            </geometry>
+            <material name="material_orange">
+                <color rgba="0.9 0.6 0.1 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger0-link2">
+        <inertial>
+            <origin xyz="0.0192 0 0" rpy="0 0 0"/>
+            <mass value="0.0509"/>
+            <inertia ixx="0.000024"  iyy="0.000036" izz="0.000038" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.025 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.05 0.0168 0.025" />
+            </geometry>
+            <material name="material_green">
+                <color rgba="0.3 0.6 0.3 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger0-link3">
+        <inertial>
+            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <mass value="0.047"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0507 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.01835 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0367 0.028 0.025" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0507 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+        </collision>
+    </link>
+
+<!-- finger 1 -->
+    <link name="finger1-link0">
+        <inertial>
+            <origin xyz="0.008 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.008 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.016 0.028 0.025" />
+            </geometry>
+            <material name="material_white">
+                <color rgba="0.7 0.7 0.7 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger1-link1">
+        <inertial>
+            <origin xyz="0.027 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.027 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.054 0.028 0.025" />
+            </geometry>
+            <material name="material_orange">
+                <color rgba="0.9 0.6 0.1 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger1-link2">
+        <inertial>
+            <origin xyz="0.0192 0 0" rpy="0 0 0"/>
+            <mass value="0.0509"/>
+            <inertia ixx="0.000024"  iyy="0.000036" izz="0.000038" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0192 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0384 0.028 0.025" />
+            </geometry>
+            <material name="material_green">
+                <color rgba="0.3 0.6 0.3 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger1-link3">
+        <inertial>
+            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <mass value="0.047"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.00935 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0187 0.028 0.025" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+        </collision>
+    </link>
+
+<!-- finger 2 -->
+
+    <link name="finger2-link0">
+        <inertial>
+            <origin xyz="0.008 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.008 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.016 0.028 0.025" />
+            </geometry>
+            <material name="material_white">
+                <color rgba="0.7 0.7 0.7 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger2-link1">
+        <inertial>
+            <origin xyz="0.027 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.0001"  iyy="0.0001" izz="0.0002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.027 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.054 0.028 0.025" />
+            </geometry>
+            <material name="material_orange">
+                <color rgba="0.9 0.6 0.1 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger2-link2">
+        <inertial>
+            <origin xyz="0.0192 0 0" rpy="0 0 0"/>
+            <mass value="0.0509"/>
+            <inertia ixx="0.000024"  iyy="0.000036" izz="0.000038" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0192 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0384 0.028 0.025" />
+            </geometry>
+            <material name="material_green">
+                <color rgba="0.3 0.6 0.3 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger2-link3">
+        <inertial>
+            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <mass value="0.047"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.00935 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0187 0.028 0.025" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+        </collision>
+    </link>
+
+<!-- finger 3 -->
+
+    <link name="finger3-link0">
+        <inertial>
+            <origin xyz="0.008 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.008 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.016 0.028 0.025" />
+            </geometry>
+            <material name="material_white">
+                <color rgba="0.7 0.7 0.7 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger3-link1">
+        <inertial>
+            <origin xyz="0.027 0 0" rpy="0 0 0"/>
+            <mass value="0.0716"/>
+            <inertia ixx="0.0001"  iyy="0.0001" izz="0.0002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.027 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.054 0.028 0.025" />
+            </geometry>
+            <material name="material_orange">
+                <color rgba="0.9 0.6 0.1 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger3-link2">
+        <inertial>
+            <origin xyz="0.0192 0 0" rpy="0 0 0"/>
+            <mass value="0.0509"/>
+            <inertia ixx="0.000024"  iyy="0.000036" izz="0.000038" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0192 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0384 0.028 0.025" />
+            </geometry>
+            <material name="material_green">
+                <color rgba="0.3 0.6 0.3 1.0" />
+            </material>
+        </visual>
+    </link>
+
+    <link name="finger3-link3">
+        <inertial>
+            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <mass value="0.047"/>
+            <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
+        </inertial>
+        <visual>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0.00935 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.0187 0.028 0.025" />
+            </geometry>
+            <material name="material_light_blue">
+                <color rgba="0.4 0.4 0.7 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.014" />
+            </geometry>
+        </collision>
+    </link>
+
+<!-- joints -->
+
+   <joint name="palm-j0" type="prismatic">
+        <parent link="base_link" />
+        <child link="virtual_link1" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="palm-j1" type="prismatic">
+        <parent link="virtual_link1" />
+        <child link="virtual_link2" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    
+    <joint name="palm-j2" type="prismatic">
+        <parent link="virtual_link2" />
+        <child link="virtual_link3" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    
+    <joint name="palm-j3" type="revolute">
+        <parent link="virtual_link3" />
+        <child link="virtual_link4" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    
+    <joint name="palm-j4" type="revolute">
+        <parent link="virtual_link4" />
+        <child link="virtual_link5" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+    
+    <joint name="palm-j5" type="revolute">
+        <parent link="virtual_link5" />
+        <child link="palm" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+<!-- finger-0 -->
+
+    <joint name="finger0-j0" type="revolute">
+        <parent link="palm" />
+        <child link="finger0-link0" />
+        <origin xyz="-0.0155 -0.015 -0.008" rpy="0.1 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger0-j1" type="revolute">
+        <parent link="finger0-link0" />
+        <child link="finger0-link1" />
+        <origin xyz="-0.01 -0.036 0" rpy="0 0.1 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger0-j2" type="revolute">
+        <parent link="finger0-link1" />
+        <child link="finger0-link2" />
+        <origin xyz="0 -0.015 0" rpy="0 0 0.2"/>
+        <axis xyz="0 0 1" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger0-j3" type="revolute">
+        <parent link="finger0-link2" />
+        <child link="finger0-link3" />
+        <origin xyz="0.05 0 0" rpy="0 0 0.2"/>
+        <axis xyz="0 0 1" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+<!-- finger-1 -->
+    <joint name="finger1-j0" type="revolute">
+        <parent link="palm" />
+        <child link="finger1-link0" />
+        <origin xyz="0.0475 -0.041 -0.015" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger1-j1" type="revolute">
+        <parent link="finger1-link0" />
+        <child link="finger1-link1" />
+        <origin xyz="0.016 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger1-j2" type="revolute">
+        <parent link="finger1-link1" />
+        <child link="finger1-link2" />
+        <origin xyz="0.054 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger1-j3" type="revolute">
+        <parent link="finger1-link2" />
+        <child link="finger1-link3" />
+        <origin xyz="0.0384 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+<!-- finger-2 -->
+
+    <joint name="finger2-j0" type="revolute">
+        <parent link="palm" />
+        <child link="finger2-link0" />
+        <origin xyz="0.0475 0.0 -0.015" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger2-j1" type="revolute">
+        <parent link="finger2-link0" />
+        <child link="finger2-link1" />
+        <origin xyz="0.016 0.0 0.0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger2-j2" type="revolute">
+        <parent link="finger2-link1" />
+        <child link="finger2-link2" />
+        <origin xyz="0.054 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger2-j3" type="revolute">
+        <parent link="finger2-link2" />
+        <child link="finger2-link3" />
+        <origin xyz="0.0384 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+<!-- finger-3 -->
+
+    <joint name="finger3-j0" type="revolute">
+        <parent link="palm" />
+        <child link="finger3-link0" />
+        <origin xyz="0.0475 0.041 -0.015" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger3-j1" type="revolute">
+        <parent link="finger3-link0" />
+        <child link="finger3-link1" />
+        <origin xyz="0.016 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger3-j2" type="revolute">
+        <parent link="finger3-link1" />
+        <child link="finger3-link2" />
+        <origin xyz="0.054 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+    <joint name="finger3-j3" type="revolute">
+        <parent link="finger3-link2" />
+        <child link="finger3-link3" />
+        <origin xyz="0.0384 0 0" rpy="0 0.3 0"/>
+        <axis xyz="0 1 0" />
+        <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
+    </joint>
+
+</robot>
