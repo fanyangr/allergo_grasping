@@ -318,12 +318,6 @@ static void* ioThreadProc(void* inst)
 		      {
 			q[i] = (double)(vars.enc_actual[i]*enc_dir[i]-32768-enc_offset[i])*(333.3/65536.0)*(3.141592/180.0);
 		      }
-        // cout << "here is the q: \n" ;
-        // for (int j=0; j < MAX_DOF; j++)
-        // {
-        //   cout << q_des[j] << endl;
-        // }
-        // cout << endl;
 
         // compute joint torque
         if(custom_PD)
@@ -470,7 +464,13 @@ void ComputeTorque()
 {
   if (!pBHand) return;
   pBHand->SetJointPosition(q); // tell BHand library the current joint positions
-  pBHand->SetJointDesiredPosition(q_des);
+  pBHand->SetJointDesiredPosition(q_des);  // this line isn't needed if we are using some grasping mode defined by the library
+/*          cout << "here is the q: \n" ;
+        for (int j=0; j < MAX_DOF; j++)
+        {
+          cout << q_des[j] << endl;
+        }
+        cout << endl;*/
   pBHand->UpdateControl(0);
   pBHand->GetJointTorque(tau_des);
 }
@@ -798,7 +798,7 @@ int main(int argc, TCHAR* argv[])
   memset(cur_des, 0, sizeof(cur_des));
   curTime = 0.0;
 
-  Sai2Model::Sai2Model* robot_model = new Sai2Model::Sai2Model("pbot.urdf");
+  Sai2Model::Sai2Model* robot_model = new Sai2Model::Sai2Model("hand.urdf");
 
   if (CreateBHandAlgorithm() && OpenCAN())
     MainLoop();
