@@ -105,10 +105,10 @@ double kd_custom[] = {
 };
 
 double q_pre_cube[] = {
-  0.55, 1.65, 0.4, 0.3,
-  0.15, 0.25, 0.65, 0.6,
-  -0.4, 1.55, 0.4, 0.1,
-  1.65, -0.25, 0.0, 0.8
+  0.55, 1.65, 0.4, 0.3,   //finger 1
+  0.15, 0.25, 0.65, 0.6,  // finger 2
+  -0.4, 1.55, 0.4, 0.1,   // finger3
+  1.65, -0.25, 0.0, 0.8   //finger 0  (thumb)
 };
 
 double q_cube[] = {
@@ -330,6 +330,12 @@ static void* ioThreadProc(void* inst)
         }
 
 		    // convert desired torque to desired current and PWM count
+/*        cout << "here is the tau_des: \n" ;
+        for (int j=0; j < MAX_DOF; j++)
+        {
+          cout << tau_des[j] << endl;
+        }
+        cout << endl;*/
 		    for (i=0; i<MAX_DOF; i++)
 		      {
 			cur_des[i] = tau_des[i] * motor_dir[i];
@@ -465,12 +471,6 @@ void ComputeTorque()
   if (!pBHand) return;
   pBHand->SetJointPosition(q); // tell BHand library the current joint positions
   pBHand->SetJointDesiredPosition(q_des);  // this line isn't needed if we are using some grasping mode defined by the library
-/*          cout << "here is the q: \n" ;
-        for (int j=0; j < MAX_DOF; j++)
-        {
-          cout << q_des[j] << endl;
-        }
-        cout << endl;*/
   pBHand->UpdateControl(0);
   pBHand->GetJointTorque(tau_des);
 }
