@@ -19,6 +19,7 @@
 #include <deque>
 
 using namespace std;
+using namespace Eigen;
 
 // ============= For REDIS =================
 
@@ -68,8 +69,6 @@ char getCommandFromRedis()
 typedef char    TCHAR;
 #define _T(X)   X
 #define _tcsicmp(x, y)   strcmp(x, y)
-
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // for CAN communication
@@ -151,30 +150,6 @@ const int	HAND_VERSION = 3;
 const double tau_cov_const_v2 = 800.0; // 800.0 for SAH020xxxxx
 const double tau_cov_const_v3 = 1200.0; // 1200.0 for SAH030xxxxx
 
-//const double enc_dir[MAX_DOF] = { // SAH020xxxxx
-//	1.0, -1.0, 1.0, 1.0,
-//	1.0, -1.0, 1.0, 1.0,
-//	1.0, -1.0, 1.0, 1.0,
-//	1.0, 1.0, -1.0, -1.0
-//};
-//const double motor_dir[MAX_DOF] = { // SAH020xxxxx
-//	1.0, 1.0, 1.0, 1.0,
-//	1.0, -1.0, -1.0, 1.0,
-//	-1.0, 1.0, 1.0, 1.0,
-//	1.0, 1.0, 1.0, 1.0
-//};
-//const int enc_offset[MAX_DOF] = { // SAH020CR020
-//	-611, -66016, 1161, 1377,
-//	-342, -66033, -481, 303,
-//	30, -65620, 446, 387,
-//	-3942, -626, -65508, -66768
-//};
-//const int enc_offset[MAX_DOF] = { // SAH020BR013
-//	-391,	-64387,	-129,	 532,
-//	 178,	-66030,	-142,	 547,
-//	-234,	-64916,	 7317,	 1923,
-//	 1124,	-1319,	-65983, -65566
-//};
 
 const double enc_dir[MAX_DOF] = { // SAH030xxxxx
   1.0, 1.0, 1.0, 1.0,
@@ -188,18 +163,7 @@ const double motor_dir[MAX_DOF] = { // SAH030xxxxx
   1.0, 1.0, 1.0, 1.0,
   1.0, 1.0, 1.0, 1.0
 };
-//const int enc_offset[MAX_DOF] = { // SAH030AR023
-//	-1700, -568, -3064, -36,
-//	-2015, -1687, 188, -772,
-//	-3763, 782, -3402, 368,
-//	1059, -2547, -692, 2411
-//};
-//const int enc_offset[MAX_DOF] = { // SAH030AL026
-//	699, 1654, 5, -464,
-//	-47, 1640, 325, 687,
-//	-361, 1161, -259, -510,
-//	-1563, 569, 470, -812
-//};
+
 const int enc_offset[MAX_DOF] = { // SAH030C033R
   -1591, -277, 545, 168,
   -904, 53, -233, -1476,
@@ -219,6 +183,8 @@ bool CreateBHandAlgorithm();
 void DestroyBHandAlgorithm();
 void ComputeTorqueCustom();
 void ComputeGravityTorque();
+VectorXd driver_to_sai2 (double q[MAX_DOF]);
+double* sai2_to_driver(VectorXd _q);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Read keyboard input (one char) from stdin
@@ -295,20 +261,19 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
 bool check_2_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
 bool check_3_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
 
-static void sai2* (void* inst)
+static void* sai2 (void * inst)
 {
   // set up signal handler
   signal(SIGABRT, &sighandler);
   signal(SIGTERM, &sighandler);
   signal(SIGINT, &sighandler);
 
-  double frequency = 1000;
 
-  auto robot = new Sai2Model::Sai2Model(robot_file, false);
+  Sai2Model::Sai2Model* robot = new Sai2Model::Sai2Model(robot_file, false);
 
     // read from Redis
-  robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
-  robot->_dq = redis_client.getEigenMatrixJSON(JOINT_VELOCITIES_KEY);
+  robot->_q = driver_to_sai2(q);
+  robot->_dq = driver_to_sai2(dq);
   robot->updateModel();
   int dof = robot->dof();
 
@@ -326,13 +291,13 @@ static void sai2* (void* inst)
   //control 4 fingers, finger 0,1,2,3
 
   // the vector used to record the velocity in the finger move close state
-  vector<deque<double>> velocity_record;
-  vector<deque<double>> detect_velocity_record; 
+  vector< deque<double> > velocity_record;
+  vector< deque<double> > detect_velocity_record; 
 
 
   // vector<Sai2Primitives::PositionTask *>  position_tasks;
   vector<int> detect_states;
-  vector<vector<Vector3d>> contact_points;
+  vector< vector<Vector3d> > contact_points;
   vector<Vector3d> normals;
   vector<string> link_names;
   vector<Affine3d> poses;
@@ -368,12 +333,11 @@ static void sai2* (void* inst)
     normals.push_back(Vector3d::Zero());
   }
 
-  auto palm_posori_task = new Sai2Primitives::PosOriTask(robot, "palm", Vector3d(0.0,0.0,0.0));
 
-  LoopTimer timer;
-  timer.setLoopFrequency(frequency);
-  timer.setCtrlCHandler(sighandler);
-  //timer.initializeTimer(1000000);
+  // LoopTimer timer;
+  // timer.setLoopFrequency(frequency);
+  // timer.setCtrlCHandler(sighandler);
+  // //timer.initializeTimer(1000000);
 
   vector<int> finger_contact_flag; // finger0, 1, 2, 3
   for (int i = 0; i < NUM_OF_FINGERS_IN_MODEL; i++)
@@ -389,20 +353,15 @@ static void sai2* (void* inst)
   while(runloop)
   {
 
-    timer.waitForNextLoop();
-    robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
-    robot->_dq = redis_client.getEigenMatrixJSON(JOINT_VELOCITIES_KEY);
+    // timer.waitForNextLoop();
+    robot->_q = driver_to_sai2(q);
+    robot->_dq = driver_to_sai2(dq);
     //cout <<"q" << robot->_q << endl;
     robot->updateModel();
     robot->coriolisForce(coriolis);
 
     if (state == PRE_GRASP)
     {
-      palm_posori_task->_desired_position = Vector3d(0.03,0.0,-0.08);
-      N_prec.setIdentity();
-      palm_posori_task->updateTaskModel(N_prec);
-      N_prec = palm_posori_task->_N;
-      palm_posori_task->computeTorques(palm_command_torques);
       //cout << "Here's the torque" << palm_command_torques << endl;
       temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.08, 0.0, -0.15), 10.0);
       temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.15, -0.041, -0.2), 10.0);
@@ -423,13 +382,6 @@ static void sai2* (void* inst)
     }
     else if (state == FINGER_MOVE_CLOSE)
     { 
-      // keep the position of the palm
-      palm_posori_task->_desired_position = Vector3d(0.03,0.0,-0.08);
-      N_prec.setIdentity();
-      palm_posori_task->updateTaskModel(N_prec);
-      N_prec = palm_posori_task->_N;
-      palm_posori_task->computeTorques(palm_command_torques);
-
       // force controller for the fingers
       for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
@@ -477,7 +429,9 @@ static void sai2* (void* inst)
         state = DETECT_NORMAL;
         for (int j = 0; j < NUM_OF_FINGERS_USED; j++)
         {
-          contact_points.push_back({current_finger_position[j]});
+          vector< Vector3d > temp_vector;
+          temp_vector.push_back(current_finger_position[j]);
+          contact_points.push_back(temp_vector);
         }
       }
     }
@@ -485,31 +439,12 @@ static void sai2* (void* inst)
     else if (state == DETECT_NORMAL)
     {
       double sum_of_normal = 0.0;
-      palm_posori_task->_desired_position = Vector3d(0.03,0.0,-0.08);
-      N_prec.setIdentity();
-      palm_posori_task->updateTaskModel(N_prec);
-      N_prec = palm_posori_task->_N;
-      palm_posori_task->computeTorques(palm_command_torques);
       for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
         temp_finger_command_torques[i] = detect_surface_normal(robot, link_names[i], poses[i].translation(), current_finger_position[i], CoM_of_object, detect_states[i], detect_velocity_record[i], contact_points[i], normals[i]);
         finger_command_torques[i].block(6 + 4 * i ,0 ,4, 1) = temp_finger_command_torques[i].block(6 + 4 * i, 0 ,4 ,1 );
         sum_of_normal += normals[i].norm();
-/*        cout << normals[i] << endl;
-        if (i == 0)
-        {
-          cout << finger_command_torques[i].block(6 + 4 * i ,0 ,4, 1) << endl;
-        }*/
-      }
-/*      cout << endl << endl;
-      if(loop_counter % 1000 == 0)
-      {
-        for(int j = 0; j < normals.size(); j++)
-        {
-          cout <<"normals" << j << ":\n" << normals[j] << endl;
-        }
-        cout << sum_of_normal << "!!!!!!" << endl;
-      }*/
+
       for (int j = NUM_OF_FINGERS_USED; j < NUM_OF_FINGERS_IN_MODEL; j++)
       {
           temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 10.0);
@@ -523,6 +458,7 @@ static void sai2* (void* inst)
       }
 
     }
+    }
 
     else if (state == CHECK)
     {
@@ -535,17 +471,6 @@ static void sai2* (void* inst)
 
     else if (state == APPLY_FORCE)
     {
-      palm_posori_task->_desired_position = Vector3d(0.03,0.0,-0.08);
-      palm_posori_task->_kp_force = 500.0;
-      palm_posori_task->_kp_moment = 500.0;
-      palm_posori_task->_kv_force = 10.0;
-      palm_posori_task->_kv_moment = 10.0;
-      palm_posori_task->_ki_force = 10.0;
-      palm_posori_task->_ki_moment = 10.0;
-      N_prec.setIdentity();
-      palm_posori_task->updateTaskModel(N_prec);
-      N_prec = palm_posori_task->_N;
-      palm_posori_task->computeTorques(palm_command_torques);
       for(int j = 1; j < NUM_OF_FINGERS_USED; j++)
       {
         temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), current_finger_position[j], 100.0);
@@ -568,9 +493,9 @@ static void sai2* (void* inst)
 
   command_torques = finger_command_torques[0] + finger_command_torques[1] \
   + finger_command_torques[2] + finger_command_torques[3]\
-  + palm_command_torques + coriolis;
+  + coriolis;
   //cout << command_torques << endl;
-  redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+  tau_des = sai2_to_driver(command_torques);
     // reset to 0
   for(int i =0; i < NUM_OF_FINGERS_IN_MODEL; i++)
   {
@@ -581,13 +506,13 @@ static void sai2* (void* inst)
   }
 
   command_torques.setZero();
-    redis_client.setEigenMatrixDerived(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+    tau_des = sai2_to_driver(command_torques);
 
-    double end_time = timer.elapsedTime();
-    std::cout << "\n";
-    std::cout << "Loop run time  : " << end_time << " seconds\n";
-    std::cout << "Loop updates   : " << timer.elapsedCycles() << "\n";
-    std::cout << "Loop frequency : " << timer.elapsedCycles()/end_time << "Hz\n";
+    // double end_time = timer.elapsedTime();
+    // std::cout << "\n";
+    // std::cout << "Loop run time  : " << end_time << " seconds\n";
+    // std::cout << "Loop updates   : " << timer.elapsedCycles() << "\n";
+    // std::cout << "Loop frequency : " << timer.elapsedCycles()/end_time << "Hz\n";
 
 }
 
@@ -1330,7 +1255,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     // cout << "contact_points" << endl;
     Matrix3d coefficient_matrix = Matrix3d::Zero();
     Vector3d mean_position = Vector3d(0.0, 0.0, 0.0);
-    auto centralized_position = contact_points;
+    vector<Vector3d> centralized_position = contact_points;
     for (int j = 0; j < contact_points.size(); j++ )
     {
       mean_position += contact_points[j];
@@ -1411,4 +1336,49 @@ bool check_2_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> norma
 bool check_3_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient)
 {
   return true;
+}
+
+VectorXd driver_to_sai2 (double q[MAX_DOF])
+{
+  VectorXd _q = VectorXd::Zero(MAX_DOF + 6);
+  _q.block(0,0,6,1) = VectorXd::Zero(6);
+  _q[6] = q[12];
+  _q[7] = q[13];
+  _q[8] = q[14];
+  _q[9] = q[15];
+  _q[10] = q[0];
+  _q[11] = q[1];
+  _q[12] = q[2];
+  _q[13] = q[3];
+  _q[14] = q[4];
+  _q[15] = q[5];
+  _q[16] = q[6];
+  _q[17] = q[7];
+  _q[18] = q[8];
+  _q[19] = q[9];
+  _q[20] = q[10];
+  _q[21] = q[11];
+  return _q;
+
+}
+double* sai2_to_driver(Eigen::VectorXd _q)
+{
+  double * q = new double[MAX_DOF];
+  q[12] = _q[6];
+  q[13] = _q[7];
+  q[14] = _q[8];
+  q[15] = _q[9];
+  q[0] = _q[10];
+  q[1] = _q[11];
+  q[2] = _q[12];
+  q[3] = _q[13];
+  q[4] = _q[14];
+  q[5] = _q[15];
+  q[6] = _q[16];
+  q[7] = _q[17];
+  q[8] = _q[18];
+  q[9] = _q[19];
+  q[10] = _q[20];
+  q[11] = _q[21];
+  return q;
 }
