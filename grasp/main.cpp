@@ -140,6 +140,8 @@ unsigned long long counter = 0;
 BHand* pBHand = NULL;
 double q[MAX_DOF];
 double q_des[MAX_DOF];
+double gravity_tourque[MAX_DOF];
+double control_torque[MAX_DOF];
 double tau_des[MAX_DOF];
 double cur_des[MAX_DOF];
 
@@ -184,7 +186,7 @@ void DestroyBHandAlgorithm();
 void ComputeTorqueCustom();
 void ComputeGravityTorque();
 VectorXd driver_to_sai2 (double q[MAX_DOF]);
-double* sai2_to_driver(VectorXd _q);
+void sai2_to_driver(VectorXd _q, double q[MAX_DOF]);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Read keyboard input (one char) from stdin
@@ -363,10 +365,10 @@ static void* sai2 (void * inst)
     if (state == PRE_GRASP)
     {
       //cout << "Here's the torque" << palm_command_torques << endl;
-      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.08, 0.0, -0.15), 10.0);
-      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.15, -0.041, -0.2), 10.0);
-        temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.15, 0.0, -0.2), 10.0);
-        temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.15, 0.041, -0.09), 10.0);
+      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.08, 0.0, -0.15), 100.0);
+      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.15, -0.041, -0.2), 100.0);
+        temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.15, 0.0, -0.2), 100.0);
+        temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.15, 0.041, -0.09), 100.0);
             
         // block the unrelated torques
         finger_command_torques[0].block(6,0,4,1) = temp_finger_command_torques[0].block(6,0,4,1);
@@ -495,7 +497,8 @@ static void* sai2 (void * inst)
   + finger_command_torques[2] + finger_command_torques[3]\
   + coriolis;
   //cout << command_torques << endl;
-  tau_des = sai2_to_driver(command_torques);
+  // cout << "here's the command torque:" << command_torques <<endl << endl;
+  sai2_to_driver(command_torques,control_torque);
     // reset to 0
   for(int i =0; i < NUM_OF_FINGERS_IN_MODEL; i++)
   {
@@ -506,7 +509,7 @@ static void* sai2 (void * inst)
   }
 
   command_torques.setZero();
-    tau_des = sai2_to_driver(command_torques);
+    sai2_to_driver(command_torques,control_torque);
 
     // double end_time = timer.elapsedTime();
     // std::cout << "\n";
@@ -595,7 +598,11 @@ static void* ioThreadProc(void* inst)
 		      }
 
         // compute joint torque
-          ComputeGravityTorque(); 
+          ComputeGravityTorque();
+          for (int j = 0; j < MAX_DOF; j++) 
+          {
+            tau_des[j] = control_torque[j] + gravity_tourque[j];
+          }
 
 /*        cout << "here is the tau_des: \n" ;
         for (int j=0; j < MAX_DOF; j++)
@@ -606,12 +613,12 @@ static void* ioThreadProc(void* inst)
 
 		    // convert desired torque to desired current and PWM count
 
-		    for (i=0; i<MAX_DOF; i++)
-		      {
-			cur_des[i] = tau_des[i] * motor_dir[i];
-			if (cur_des[i] > 1.0) cur_des[i] = 1.0;
-			else if (cur_des[i] < -1.0) cur_des[i] = -1.0;
-		      }
+	    for (i=0; i<MAX_DOF; i++)
+	      {
+			   cur_des[i] = tau_des[i] * motor_dir[i];
+			   if (cur_des[i] > 1.0) cur_des[i] = 1.0;
+			   else if (cur_des[i] < -1.0) cur_des[i] = -1.0;
+	      }
 
 		    // send torques
 		    for (int i=0; i<4;i++)
@@ -746,7 +753,7 @@ void ComputeGravityTorque()
   pBHand->SetJointPosition(q); // tell BHand library the current joint positions
   pBHand->SetJointDesiredPosition(q_des);  // this line isn't needed if we are using some grasping mode defined by the library
   pBHand->UpdateControl(0);
-  pBHand->GetJointTorque(tau_des);
+  pBHand->GetJointTorque(gravity_tourque);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -795,39 +802,39 @@ void ComputeTorqueCustom()
 
 
 
-  // if(counter % 500 == 0)
-  // {
-  //   std::cout << "q : " << std::endl;
-  //   for(int i=0; i<4; i++)
-  //   {
-  //     std::cout << q[4*i] << '\t' << q[4*i+1] << '\t' << q[4*i+2] << '\t' << q[4*i+3] << '\n';
-  //   }
-  //   std::cout << std::endl;
-  //   std::cout << "q_des : " << std::endl;
-  //   for(int i=0; i<4; i++)
-  //   {
-  //     std::cout << q_des[4*i] << '\t' << q_des[4*i+1] << '\t' << q_des[4*i+2] << '\t' << q_des[4*i+3] << '\n';
-  //   }
-  //   std::cout << std::endl;
-  //   std::cout << "dq : " << std::endl;
-  //   for(int i=0; i<4; i++)
-  //   {
-  //     std::cout << dq[4*i] << '\t' << dq[4*i+1] << '\t' << dq[4*i+2] << '\t' << dq[4*i+3] << '\n';
-  //   }
-  //   std::cout << std::endl;    
-  //   std::cout << "dq filtered : " << std::endl;
-  //   for(int i=0; i<4; i++)
-  //   {
-  //     std::cout << dq_filtered[4*i] << '\t' << dq_filtered[4*i+1] << '\t' << dq_filtered[4*i+2] << '\t' << dq_filtered[4*i+3] << '\n';
-  //   }
-  //   std::cout << std::endl;
-  //   std::cout << "tau : " << std::endl;
-  //   for(int i=0; i<4; i++)
-  //   {
-  //     std::cout << tau_des[4*i] << '\t' << tau_des[4*i+1] << '\t' << tau_des[4*i+2] << '\t' << tau_des[4*i+3] << '\n';
-  //   }
-  //   std::cout << std::endl << std::endl;
-  // }
+ /* if(counter % 500 == 0)
+  {
+    std::cout << "q : " << std::endl;
+    for(int i=0; i<4; i++)
+    {
+      std::cout << q[4*i] << '\t' << q[4*i+1] << '\t' << q[4*i+2] << '\t' << q[4*i+3] << '\n';
+    }
+    std::cout << std::endl;
+    std::cout << "q_des : " << std::endl;
+    for(int i=0; i<4; i++)
+    {
+      std::cout << q_des[4*i] << '\t' << q_des[4*i+1] << '\t' << q_des[4*i+2] << '\t' << q_des[4*i+3] << '\n';
+    }
+    std::cout << std::endl;
+    std::cout << "dq : " << std::endl;
+    for(int i=0; i<4; i++)
+    {
+      std::cout << dq[4*i] << '\t' << dq[4*i+1] << '\t' << dq[4*i+2] << '\t' << dq[4*i+3] << '\n';
+    }
+    std::cout << std::endl;    
+    std::cout << "dq filtered : " << std::endl;
+    for(int i=0; i<4; i++)
+    {
+      std::cout << dq_filtered[4*i] << '\t' << dq_filtered[4*i+1] << '\t' << dq_filtered[4*i+2] << '\t' << dq_filtered[4*i+3] << '\n';
+    }
+    std::cout << std::endl;
+    std::cout << "tau : " << std::endl;
+    for(int i=0; i<4; i++)
+    {
+      std::cout << tau_des[4*i] << '\t' << tau_des[4*i+1] << '\t' << tau_des[4*i+2] << '\t' << tau_des[4*i+3] << '\n';
+    }
+    std::cout << std::endl << std::endl;
+  }*/
 
   // save last iteration info for filter
   for (int i=0; i<MAX_DOF; i++)
@@ -869,6 +876,7 @@ bool OpenCAN()
 
   /* initialize condition variable */
   int ioThread_error = pthread_create(&hThread, NULL, ioThreadProc, 0);
+  int sai2_error = pthread_create(&cThread, NULL, sai2, 0);
   if (ioThread_error)
     {
       printf("error, the io thread starting procedure failed.\n");
@@ -1072,10 +1080,12 @@ int main(int argc, TCHAR* argv[])
   memset(cur_des, 0, sizeof(cur_des));
   curTime = 0.0;
 
-  Sai2Model::Sai2Model* robot_model = new Sai2Model::Sai2Model("hand.urdf");
+  // Sai2Model::Sai2Model* robot_model = new Sai2Model::Sai2Model("hand.urdf");
 
   if (CreateBHandAlgorithm() && OpenCAN())
-    MainLoop();
+    {
+      MainLoop();
+    }
 
   CloseCAN();
   DestroyBHandAlgorithm();
@@ -1086,6 +1096,24 @@ int main(int argc, TCHAR* argv[])
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // functions from Sai2 program
+VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d desired_position, double kp)
+{
+  // double kp = 10;
+  double kv = kp/5;
+  double damping = -0.005;
+
+  int dof = robot->dof();
+  Vector3d current_position; // in robot frame
+  Vector3d current_velocity;
+  MatrixXd Jv = MatrixXd::Zero(3,dof);
+  robot->Jv(Jv, link, pos_in_link);
+  robot->position(current_position, link, pos_in_link);
+  robot->linearVelocity(current_velocity, link, pos_in_link);
+  VectorXd torque = VectorXd::Zero(dof);
+  torque = Jv.transpose()*(kp*(desired_position - current_position) - kv * current_velocity) + damping * robot->_dq;
+  return torque;
+}
+
 VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d desired_position, double force_requeired)
 {
   int dof = robot->dof();
@@ -1361,9 +1389,8 @@ VectorXd driver_to_sai2 (double q[MAX_DOF])
   return _q;
 
 }
-double* sai2_to_driver(Eigen::VectorXd _q)
+void sai2_to_driver(VectorXd _q, double q[MAX_DOF])
 {
-  double * q = new double[MAX_DOF];
   q[12] = _q[6];
   q[13] = _q[7];
   q[14] = _q[8];
@@ -1380,5 +1407,4 @@ double* sai2_to_driver(Eigen::VectorXd _q)
   q[9] = _q[19];
   q[10] = _q[20];
   q[11] = _q[21];
-  return q;
 }
