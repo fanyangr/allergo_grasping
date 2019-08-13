@@ -103,7 +103,7 @@
             <inertia ixx="0.000024"  iyy="0.000036" izz="0.000038" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-            <origin xyz="0.025 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.025 0.0 0.0" rpy="0 0 -1.57" />
             <geometry>
                 <box size="0.05 0.0168 0.025" />
             </geometry>
