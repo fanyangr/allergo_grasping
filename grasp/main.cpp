@@ -227,11 +227,6 @@ using namespace Eigen;
 const string robot_file = "hand.urdf";
 const string robot_name = "Hand3Finger";
 
-
-const std::string JOINT_ANGLES_KEY  = "sai2::graspFan::sensors::q";
-const std::string JOINT_VELOCITIES_KEY = "sai2::graspFan::sensors::dq";
-const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::graspFan::actuators::fgc";
-
 #define NUM_OF_FINGERS_IN_MODEL 4
 #define NUM_OF_FINGERS_USED     3
 
@@ -365,17 +360,21 @@ static void* sai2 (void * inst)
 
     if (state == PRE_GRASP)
     {
-      for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
+/*      for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
     {
       robot->position(current_finger_position[i], link_names[i], poses[i].translation());
       cout << "here is the position for " << link_names[i] << endl;
       cout << current_finger_position[i] << endl << endl;
-    }
+    }*/
+      robot->position(current_finger_position[0], link_names[0], poses[0].translation());
+      cout << "here is the position for " << link_names[0] << endl;
+      cout << current_finger_position[0] << endl << endl;
+
       //cout << "Here's the torque" << palm_command_torques << endl;
-      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.0, 0.0, -0.08), 100.0);
+      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.05, 0.03, -0.1), 100.0);
       temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, -0.041, -0.1), 100.0);
       temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.1), 100.0);
-      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.15, 0.041, -0.09), 100.0);
+      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, 0.041, -0.09), 100.0);
             
         // block the unrelated torques
         finger_command_torques[0].block(6,0,4,1) = temp_finger_command_torques[0].block(6,0,4,1);
@@ -1377,10 +1376,10 @@ VectorXd driver_to_sai2 (double q[MAX_DOF])
 {
   VectorXd _q = VectorXd::Zero(MAX_DOF + 6);
   _q.block(0,0,6,1) = VectorXd::Zero(6);
-  _q[6] = q[12];
+  _q[6] = -q[12];
   _q[7] = q[13];
-  _q[8] = q[14];
-  _q[9] = q[15];
+  _q[8] = -q[14];
+  _q[9] = -q[15];
   _q[10] = q[0];
   _q[11] = q[1];
   _q[12] = q[2];
@@ -1398,10 +1397,10 @@ VectorXd driver_to_sai2 (double q[MAX_DOF])
 }
 void sai2_to_driver(VectorXd _q, double q[MAX_DOF])
 {
-  q[12] = _q[6];
+  q[12] = -_q[6];
   q[13] = _q[7];
-  q[14] = _q[8];
-  q[15] = _q[9];
+  q[14] = -_q[8];
+  q[15] = -_q[9];
   q[0] = _q[10];
   q[1] = _q[11];
   q[2] = _q[12];
