@@ -312,8 +312,8 @@ static void* sai2 (void * inst)
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(0.05,0.0,0.05); // in the world frame
-  CoM_of_object -= Vector3d(0.0, 0.0, 0.25); // transform into the robor frame
+  Vector3d CoM_of_object = Vector3d(-0.03,0.02,0.25); // in the world frame
+  CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
 
   for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
   {
@@ -366,9 +366,9 @@ static void* sai2 (void * inst)
       cout << "here is the position for " << link_names[i] << endl;
       cout << current_finger_position[i] << endl << endl;
     }*/
-      robot->position(current_finger_position[0], link_names[0], poses[0].translation());
-      cout << "here is the position for " << link_names[0] << endl;
-      cout << current_finger_position[0] << endl << endl;
+      // robot->position(current_finger_position[0], link_names[0], poses[0].translation());
+      // cout << "here is the position for " << link_names[0] << endl;
+      // cout << current_finger_position[0] << endl << endl;
 
       //cout << "Here's the torque" << palm_command_torques << endl;
       temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.05, 0.03, -0.1), 100.0);
@@ -381,21 +381,24 @@ static void* sai2 (void * inst)
         finger_command_torques[1].block(10,0,4,1) = temp_finger_command_torques[1].block(10,0,4,1);
         finger_command_torques[2].block(14,0,4,1) = temp_finger_command_torques[2].block(14,0,4,1);
         finger_command_torques[3].block(18,0,4,1) = temp_finger_command_torques[3].block(18,0,4,1);
+        // cout << palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() << endl;
 
-
-        if (palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() < 0.0001)
+        if (palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() < 0.5)
         {
           state = FINGER_MOVE_CLOSE;
+          cout << " the robot start moving the finger to make contact" << endl << endl;
         }
     }
     else if (state == FINGER_MOVE_CLOSE)
     { 
+      // cout << "in the finger move close state" << endl;
       // force controller for the fingers
+      cout << finger_contact_flag[0] << finger_contact_flag[1] << finger_contact_flag[2] << finger_contact_flag[3] << endl;
       for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
         if (finger_contact_flag[i] == 0)
         {
-          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 0.001);
+          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 5.0);
           finger_command_torques[i].block(6+4*i,0,4,1) = temp_finger_command_torques[i].block(6+4*i,0,4,1);
           Vector3d temp_finger_velocity = Vector3d::Zero();
           robot->linearVelocity(temp_finger_velocity, link_names[i], poses[i].translation());
@@ -415,7 +418,7 @@ static void* sai2 (void * inst)
         // maintain the current position after contact
         else if (finger_contact_flag[i] == 1)
         {
-          temp_finger_command_torques[i] = compute_position_cmd_torques(robot, link_names[i], poses[i].translation(), current_finger_position[i], 10.0);
+          temp_finger_command_torques[i] = compute_position_cmd_torques(robot, link_names[i], poses[i].translation(), current_finger_position[i], 100.0);
             finger_command_torques[i].block(6 + 4 * i ,0 ,4, 1) = temp_finger_command_torques[i].block(6 + 4 * i, 0 ,4 ,1 );
         } 
       }
@@ -423,7 +426,7 @@ static void* sai2 (void * inst)
       // keep the position of fingers that are not used
       for (int j = NUM_OF_FINGERS_USED; j < NUM_OF_FINGERS_IN_MODEL; j++)
       {
-          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 10.0);
+          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 100.0);
         finger_command_torques[j].block(6+4*j,0,4,1) = temp_finger_command_torques[j].block(6+4*j,0,4,1);
       }
 
@@ -435,6 +438,7 @@ static void* sai2 (void * inst)
       if (sum_of_contact == NUM_OF_FINGERS_USED)
       {
         state = DETECT_NORMAL;
+        cout << " the robot start detecting the surface normal" << endl << endl;
         for (int j = 0; j < NUM_OF_FINGERS_USED; j++)
         {
           vector< Vector3d > temp_vector;
