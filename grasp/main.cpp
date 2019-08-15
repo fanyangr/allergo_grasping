@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <vector>
 #include <deque>
+#include <unistd.h>
 
 using namespace std;
 using namespace Eigen;
@@ -312,7 +313,7 @@ static void* sai2 (void * inst)
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(-0.03,0.02,0.25); // in the world frame
+  Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.25); // in the world frame
   CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
 
   for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
@@ -349,23 +350,16 @@ static void* sai2 (void * inst)
   // cout << robot->_joint_names_map["finger0-j0"] << "!!!!!!!!!!!!!!!!!!!!!!!" <<endl;
   while(runloop)
   {
-
     // timer.waitForNextLoop();
     robot->_q = driver_to_sai2(q);
-    robot->_dq = driver_to_sai2(dq);
-    // cout <<"q" << robot->_q << endl << endl;
+    robot->_dq = driver_to_sai2(dq_filtered);
+    // cout <<"dq" << robot->_dq << endl << endl;
     
     robot->updateModel();
-    robot->coriolisForce(coriolis);
 
     if (state == PRE_GRASP)
     {
-/*      for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
-    {
-      robot->position(current_finger_position[i], link_names[i], poses[i].translation());
-      cout << "here is the position for " << link_names[i] << endl;
-      cout << current_finger_position[i] << endl << endl;
-    }*/
+
       // robot->position(current_finger_position[0], link_names[0], poses[0].translation());
       // cout << "here is the position for " << link_names[0] << endl;
       // cout << current_finger_position[0] << endl << endl;
@@ -386,6 +380,7 @@ static void* sai2 (void * inst)
         if (palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() < 0.5)
         {
           state = FINGER_MOVE_CLOSE;
+          sleep(1.5); //  a necessary pause to clean off the memory and buffer the mechanism    
           cout << " the robot start moving the finger to make contact" << endl << endl;
         }
     }
@@ -393,7 +388,13 @@ static void* sai2 (void * inst)
     { 
       // cout << "in the finger move close state" << endl;
       // force controller for the fingers
-      cout << finger_contact_flag[0] << finger_contact_flag[1] << finger_contact_flag[2] << finger_contact_flag[3] << endl;
+      // cout << finger_contact_flag[0] << finger_contact_flag[1] << finger_contact_flag[2] << finger_contact_flag[3] << endl;
+/*      for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
+    {
+      robot->position(current_finger_position[i], link_names[i], poses[i].translation());
+      cout << "here is the position for " << link_names[i] << endl;
+      cout << current_finger_position[i] << endl << endl;
+    }*/
       for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
         if (finger_contact_flag[i] == 0)
@@ -504,8 +505,7 @@ static void* sai2 (void * inst)
     loop_counter++;
 
   command_torques = finger_command_torques[0] + finger_command_torques[1] \
-  + finger_command_torques[2] + finger_command_torques[3]\
-  + coriolis;
+  + finger_command_torques[2] + finger_command_torques[3];
   //cout << command_torques << endl;
   // cout << "here's the command torque:" << command_torques <<endl << endl;
   sai2_to_driver(command_torques,control_torque);
@@ -602,6 +602,20 @@ static void* ioThreadProc(void* inst)
 		if (data_return == (0x01 | 0x02 | 0x04 | 0x08))
 		  {
 		    // convert encoder count to joint angle
+        for (int i = 0; i < MAX_DOF; i++)    
+          {
+            dq[i] = (q[i] - q_prev[i]) / delT;
+            dq_filter_input[i] = dq[i] / gain;
+            dq_filtered[i] = dq_prev_prev_filter_input[i] + 2*dq_prev_filter_input[i] + dq_filter_input[i] + filter_coeffs[0]*dq_prev_prev_filtered[i] + filter_coeffs[1]*dq_prev_filtered[i];
+          }
+        for (int i = 0; i < MAX_DOF; i++)
+        {
+            q_prev[i] = q[i];
+            dq_prev_prev_filter_input[i] = dq_prev_filter_input[i];
+            dq_prev_filter_input[i] = dq_filter_input[i];
+            dq_prev_prev_filtered[i] = dq_prev_filtered[i];
+            dq_prev_filtered[i] = dq_filtered[i];
+        }
 		    for (i=0; i<MAX_DOF; i++)
 		      {
 			q[i] = (double)(vars.enc_actual[i]*enc_dir[i]-32768-enc_offset[i])*(333.3/65536.0)*(3.141592/180.0);
@@ -691,9 +705,13 @@ void MainLoop()
 	      switch (c)
 	        {
 	        case 'q':
-		  if (pBHand) pBHand->SetMotionType(eMotionType_NONE);
-		  bRun = false;
-		  break;
+  		  if (pBHand) pBHand->SetMotionType(eMotionType_NONE);
+  		  bRun = false;
+  		  break;
+      case 'Q':
+        if (pBHand) pBHand->SetMotionType(eMotionType_NONE);
+        bRun = false;
+        break;
       case 's':
       int ioThread_error = pthread_create(&cThread, NULL, sai2, 0);
 
@@ -761,7 +779,7 @@ void ComputeGravityTorque()
 {
   if (!pBHand) return;
   pBHand->SetJointPosition(q); // tell BHand library the current joint positions
-  pBHand->SetJointDesiredPosition(q_des);  // this line isn't needed if we are using some grasping mode defined by the library
+//  pBHand->SetJointDesiredPosition(q_des);  // this line isn't needed if we are using some grasping mode defined by the library
   pBHand->UpdateControl(0);
   pBHand->GetJointTorque(gravity_tourque);
 }
@@ -1109,9 +1127,7 @@ int main(int argc, TCHAR* argv[])
 VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d desired_position, double kp)
 {
   // double kp = 10;
-  double kv = kp/5;
-  double damping = -0.005;
-
+  double kv = kp/50;
   int dof = robot->dof();
   Vector3d current_position; // in robot frame
   Vector3d current_velocity;
@@ -1120,7 +1136,7 @@ VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, 
   robot->position(current_position, link, pos_in_link);
   robot->linearVelocity(current_velocity, link, pos_in_link);
   VectorXd torque = VectorXd::Zero(dof);
-  torque = Jv.transpose()*(kp*(desired_position - current_position) - kv * current_velocity) + damping * robot->_dq;
+  torque = Jv.transpose()*(kp*(desired_position - current_position) - kv * current_velocity);
   return torque;
 }
 
@@ -1128,7 +1144,6 @@ VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vec
 {
   int dof = robot->dof();
   // double force_requeired = 0.001;
-  double damping = -force_requeired / 10;
   Vector3d current_position; // in robot frame
   Vector3d current_velocity;
   Vector3d desired_force;
@@ -1139,7 +1154,7 @@ VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vec
   desired_force = desired_force / desired_force.norm(); // normalization
   desired_force = desired_force * force_requeired;
   VectorXd torque = VectorXd::Zero(dof);
-  torque = Jv.transpose()*desired_force + damping * robot->_dq;
+  torque = Jv.transpose()*desired_force;
   return torque;
 }
 
