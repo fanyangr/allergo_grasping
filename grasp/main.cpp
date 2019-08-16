@@ -124,6 +124,16 @@ double q_cube[] = {
   1.65, -0.25, 0.0, 0.8
 };
 
+double origin_config[] = {
+  0.0, 0.7, 0.7, 0.7,
+  0.0, 0.7, 0.7, 0.7,
+  0.0, 0.7, 0.7, 0.7,
+  1.57, 0.0, 0.2, 0.7
+};
+
+bool dynamic_consistence_flag = true; // the flag which marks whether we should use dynamic consistence
+//  to maintain the original configurations
+
 enum CustomGrasp {PreCubeGrasp, CubeGrasp};
 
 CustomGrasp custom_grasp = PreCubeGrasp;
@@ -314,7 +324,7 @@ static void* sai2 (void * inst)
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.25); // in the world frame
+  Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.18); // in the world frame
   CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
 
   for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
@@ -366,10 +376,10 @@ static void* sai2 (void * inst)
       // cout << current_finger_position[0] << endl << endl;
 
       //cout << "Here's the torque" << palm_command_torques << endl;
-      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.05, 0.03, -0.1), 100.0);
-      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, -0.041, -0.1), 100.0);
-      temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.1), 100.0);
-      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, 0.041, -0.09), 100.0);
+      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.07), 100.0);
+      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, -0.041, -0.08), 100.0);
+      temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.08), 100.0);
+      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, 0.041, -0.08), 100.0);
             
         // block the unrelated torques
         finger_command_torques[0].block(6,0,4,1) = temp_finger_command_torques[0].block(6,0,4,1);
@@ -400,7 +410,7 @@ static void* sai2 (void * inst)
       {
         if (finger_contact_flag[i] == 0)
         {
-          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 1.0);
+          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 2.0);
           finger_command_torques[i].block(6+4*i,0,4,1) = temp_finger_command_torques[i].block(6 + 4 * i, 0, 4, 1);
           Vector3d temp_finger_velocity = Vector3d::Zero();
           robot->linearVelocity(temp_finger_velocity, link_names[i], poses[i].translation());
@@ -1129,6 +1139,7 @@ int main(int argc, TCHAR* argv[])
 VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d desired_position, double kp)
 {
   // double kp = 10;
+
   double kv = kp/50;
   int dof = robot->dof();
   Vector3d current_position; // in robot frame
@@ -1139,6 +1150,14 @@ VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, 
   robot->linearVelocity(current_velocity, link, pos_in_link);
   VectorXd torque = VectorXd::Zero(dof);
   torque = Jv.transpose()*(kp*(desired_position - current_position) - kv * current_velocity);
+  if (dynamic_consistence_flag == true)
+  {
+    MatrixXd N_prec = MatrixXd::Identity(dof,dof);
+    MatrixXd N = MatrixXd::Zero(dof, dof);
+    robot->nullspaceMatrix(N, Jv, N_prec);
+    VectorXd origin = driver_to_sai2(origin_config);
+    torque += N * 0.8 * (origin - robot->_q);
+  }
   return torque;
 }
 
