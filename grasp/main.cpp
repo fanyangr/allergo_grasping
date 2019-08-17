@@ -128,7 +128,7 @@ double q_cube[] = {
   0.0, 0.7, 0.7, 0.7,
   0.0, 0.7, 0.7, 0.7,
   0.0, 0.7, 0.7, 0.7,
-  1.57, 0.0, 0.2, 0.7
+  1.57, 0.0, 0.5, 0.7
 };
 
 const bool dynamic_consistence_flag = true; // the flag which marks whether we should use dynamic consistence
@@ -245,7 +245,6 @@ const string robot_name = "Hand3Finger";
 
 #define CONTACT_COEFFICIENT     0.5 
 #define MIN_COLLISION_V         0.01
-#define DISPLACEMENT_DIS        0.05  // how much you wanna move awat from the original point in normal detection step
 #define FRICTION_COEFFICIENT     0.3
 #define SURFACE_FORCE           1.5   // the force used to detect the surface normal
 
@@ -259,6 +258,7 @@ const string robot_name = "Hand3Finger";
 int state = PRE_GRASP;
 
 double prob_distance = 0.02; // how much you want the to prob laterally in normal detection step
+double displacement_dis = 0.02;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 
 // the function used in the finger position control command
@@ -1215,7 +1215,12 @@ VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vec
 
 VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d original_pos, Vector3d CoM_of_object, int& state, deque<double>& velocity_record, vector<Vector3d>& contact_points, Vector3d& normal)
 {
-  cout << state << endl;
+  double local_displace_dis = displacement_dis;
+  if (link == "finger0-link3")
+  {
+    local_displace_dis = -displacement_dis;
+  }
+  // cout << state << endl;
   // cout << "Here is the contact point!!!!!" << contact_points[0] << endl << endl;
   // cout << "Here is the CoM of object!!!!!" << CoM_of_object << endl << endl;
   int dof = robot->dof();
@@ -1225,8 +1230,9 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   if(state == 0) // just start from the initial centroid position
   {
 
-    Vector3d desired_position = DISPLACEMENT_DIS*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
-    original_pos + Vector3d(0.0, 0.0, prob_distance);
+    // Vector3d desired_position = displacement_dis*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
+    // original_pos + Vector3d(0.0, 0.0, prob_distance);
+    Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, 0.0, prob_distance);
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
     if((desired_position - current_position).norm() < 0.02)
     {
@@ -1260,8 +1266,10 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   else if(state == 2) 
   {
 
-    Vector3d desired_position = DISPLACEMENT_DIS*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
-    original_pos + Vector3d(0.0, 0.0, -prob_distance);
+    // Vector3d desired_position = displacement_dis*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
+    // original_pos + Vector3d(0.0, 0.0, -prob_distance);
+    Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, 0.0, -prob_distance);
+
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
     if((desired_position - current_position).norm() < 0.02)
     {
@@ -1294,13 +1302,15 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
 
   else if(state == 4) 
   {
-    Vector3d disp = Vector3d(0.0, 0.0, 0.0);
-    Vector3d origin_disp = (original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm();
-    disp[0] = origin_disp[1]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
-    disp[1] = - origin_disp[0]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
+    // Vector3d disp = Vector3d(0.0, 0.0, 0.0);
+    // Vector3d origin_disp = (original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm();
+    // disp[0] = origin_disp[1]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
+    // disp[1] = - origin_disp[0]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
 
-    Vector3d desired_position = DISPLACEMENT_DIS*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
-    original_pos + prob_distance * disp;
+    // Vector3d desired_position = displacement_dis*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
+    // original_pos + prob_distance * disp;
+    Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, prob_distance, 0.0);
+
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
     if((desired_position - current_position).norm() < 0.02)
     {
@@ -1335,14 +1345,16 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
 
   else if(state == 6) 
   {
-    Vector3d disp = Vector3d(0.0, 0.0, 0.0);
-    Vector3d origin_disp = (original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm();
-    disp[0] = origin_disp[1]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
-    disp[1] = - origin_disp[0]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
-    disp = - disp;
+    // Vector3d disp = Vector3d(0.0, 0.0, 0.0);
+    // Vector3d origin_disp = (original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm();
+    // disp[0] = origin_disp[1]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
+    // disp[1] = - origin_disp[0]/sqrt(pow(origin_disp[0], 2) + pow(origin_disp[1], 2));
+    // disp = - disp;
 
-    Vector3d desired_position = DISPLACEMENT_DIS*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + \
-    original_pos + prob_distance * disp;
+    // Vector3d desired_position = displacement_dis*(original_pos - CoM_of_object) / (original_pos - CoM_of_object).norm() + 
+    // original_pos + prob_distance * disp;
+    Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, -prob_distance, 0.0);
+
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
     if((desired_position - current_position).norm() < 0.02)
     {
