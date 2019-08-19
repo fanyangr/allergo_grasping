@@ -257,8 +257,8 @@ const string robot_name = "Hand3Finger";
 
 int state = PRE_GRASP;
 
-double prob_distance = 0.02; // how much you want the to prob laterally in normal detection step
-double displacement_dis = 0.02;  // how much you wanna move awat from the original point in normal detection step
+double prob_distance = 0.025; // how much you want the to prob laterally in normal detection step
+double displacement_dis = 0.04;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 
 // the function used in the finger position control command
@@ -268,10 +268,19 @@ VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vec
 // this function is used to detect surface normal by sampling several points in the vicinity
 // It can only be called when the finger tip is making contact with the object surface
 // returns the torque needed 
-VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d original_pos, Vector3d CoM_of_object, int& state, deque<double>& velocity_record, vector<Vector3d>& contact_points, Vector3d& normal);
+VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d original_pos, Vector3d CoM_of_object, int& state, deque<double>& velocity_record, vector<Vector3d>& contact_points, Vector3d& normal, int& static_counter);
 // this function is used to check whether we can only 2 finger to have a leagal grasp
 bool check_2_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
 bool check_3_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
+
+// vector< deque<Vector3d> > position_recorder;
+// deque<Vector3d> initial_queue;
+// initial_queue.push_back(Vector3d(0.0, 0.0, 0.0));
+// initial_queue.push_back(Vector3d(1.0, 1.0, 1.0));
+// for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
+// {
+//   position_recorder.push_back(initial_queue);
+// }
 
 
 // ----------------------------------------------------------------------------------------------
@@ -291,6 +300,13 @@ static void* sai2 (void * inst)
   robot->_dq = driver_to_sai2(dq);
   robot->updateModel();
   int dof = robot->dof();
+  VectorXd friction_compensation_pos = VectorXd::Zero(dof);
+  friction_compensation_pos << 0,0,0,0,0,0,
+  0.0,0.0,0.0,0.0,
+  0,0.06,0.04,0.025,
+  0,0.06,0.04,0.025,
+  0,0.06,0.04,0.025;
+
 
   vector<Vector3d> current_finger_position;
   VectorXd command_torques = VectorXd::Zero(dof);
@@ -330,9 +346,13 @@ static void* sai2 (void * inst)
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.15); // in the world frame
+  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.19); // in the world frame
   // Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.15); // in the world frame
   CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
+  // vector<Vector3d> velocities;
+  vector<int> finger_contact_flag; // finger0, 1, 2, 3
+
+  vector<int> static_counter;
 
   for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
   {
@@ -347,6 +367,12 @@ static void* sai2 (void * inst)
     detect_states.push_back(0);
 
     normals.push_back(Vector3d::Zero());
+
+    finger_contact_flag.push_back(0);
+
+    static_counter.push_back(0);
+
+    // velocities.push_back(Vector3d(9.9,9.9,9.9));
   }
 
 
@@ -355,14 +381,9 @@ static void* sai2 (void * inst)
   // timer.setCtrlCHandler(sighandler);
   // //timer.initializeTimer(1000000);
 
-  vector<int> finger_contact_flag; // finger0, 1, 2, 3
-  for (int i = 0; i < NUM_OF_FINGERS_IN_MODEL; i++)
-  {
-    finger_contact_flag.push_back(0);
-  }
-
   runloop = true ;
-  int loop_counter = 0;
+  long long int loop_counter = 0;
+
 
 
   // cout << robot->_joint_names_map["finger0-j0"] << "!!!!!!!!!!!!!!!!!!!!!!!" <<endl;
@@ -374,6 +395,18 @@ static void* sai2 (void * inst)
     // cout <<"dq" << robot->_dq << endl << endl;
     
     robot->updateModel();
+/*    if (loop_counter % 200 == 0)
+    {
+      for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
+      {
+        robot->linearVelocity(velocities[i], link_names[i], poses[i].translation());
+        if (velocities[i].norm() < 0.003)
+        {
+          static_counters[i]++;
+        }
+
+      }
+    }*/
 
     if (state == PRE_GRASP)
     {
@@ -393,7 +426,7 @@ static void* sai2 (void * inst)
         finger_command_torques[1].block(10,0,4,1) = temp_finger_command_torques[1].block(10,0,4,1);
         finger_command_torques[2].block(14,0,4,1) = temp_finger_command_torques[2].block(14,0,4,1);
         finger_command_torques[3].block(18,0,4,1) = temp_finger_command_torques[3].block(18,0,4,1);
-        // cout << palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() << endl;
+        cout << palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() << endl;
 
         if (palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() < 0.65)
         {
@@ -412,12 +445,12 @@ static void* sai2 (void * inst)
       // cout << "in the finger move close state" << endl;
       // force controller for the fingers
       // cout << finger_contact_flag[0] << finger_contact_flag[1] << finger_contact_flag[2] << finger_contact_flag[3] << endl;
-/*   for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
-    {
-      robot->position(current_finger_position[i], link_names[i], poses[i].translation());
-      cout << "here is the position for " << link_names[i] << endl;
-      cout << current_finger_position[i] << endl << endl;
-    }*/
+      /*   for( int i = 0; i < NUM_OF_FINGERS_USED; i++)
+      {
+        robot->position(current_finger_position[i], link_names[i], poses[i].translation());
+        cout << "here is the position for " << link_names[i] << endl;
+        cout << current_finger_position[i] << endl << endl;
+      }*/
       for(int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
         if (finger_contact_flag[i] == 0)
@@ -482,7 +515,7 @@ static void* sai2 (void * inst)
       double sum_of_normal = 0.0;
       for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
-        temp_finger_command_torques[i] = detect_surface_normal(robot, link_names[i], poses[i].translation(), current_finger_position[i], CoM_of_object, detect_states[i], detect_velocity_record[i], contact_points[i], normals[i]);
+        temp_finger_command_torques[i] = detect_surface_normal(robot, link_names[i], poses[i].translation(), current_finger_position[i], CoM_of_object, detect_states[i], detect_velocity_record[i], contact_points[i], normals[i], static_counter[i]);
         finger_command_torques[i].block(6 + 4 * i ,0 ,4, 1) = temp_finger_command_torques[i].block(6 + 4 * i, 0 ,4 ,1 );
         sum_of_normal += normals[i].norm();
 
@@ -534,6 +567,19 @@ static void* sai2 (void * inst)
 
   command_torques = finger_command_torques[0] + finger_command_torques[1] \
   + finger_command_torques[2] + finger_command_torques[3];
+  for (int i = 0; i < dof; i++)
+  {
+    if (command_torques[i] > 0)
+    {
+      command_torques[i] += friction_compensation_pos[i];
+    }
+  }
+    // command_torques << 0,0,0,0,0,0,
+    // 0.0,0.0,0.0,0.0,
+    // 0.0,0.0,0.0,0.0,
+    // 0.0,0.0,0.0,0.0,
+    // 0.0,0.0,0.0,0.0;
+
   //cout << command_torques << endl;
   // cout << "here's the command torque:" << command_torques <<endl << endl;
   sai2_to_driver(command_torques,control_torque);
@@ -740,8 +786,10 @@ void MainLoop()
         if (pBHand) pBHand->SetMotionType(eMotionType_NONE);
         bRun = false;
         break;
-      case 's':
-      int ioThread_error = pthread_create(&cThread, NULL, sai2, 0);
+          case 'o':
+      if (pBHand) pBHand->SetMotionType(eMotionType_NONE);
+      break;
+
 
       /*
 	        case 'h':
@@ -1213,8 +1261,9 @@ VectorXd compute_force_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vec
   return torque;
 }
 
-VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d original_pos, Vector3d CoM_of_object, int& state, deque<double>& velocity_record, vector<Vector3d>& contact_points, Vector3d& normal)
+VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d original_pos, Vector3d CoM_of_object, int& state, deque<double>& velocity_record, vector<Vector3d>& contact_points, Vector3d& normal, int& static_counter)
 {
+  // cout << velocity_record[0] << endl << endl;
   double local_displace_dis = displacement_dis;
   if (link == "finger0-link3")
   {
@@ -1234,11 +1283,13 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     // original_pos + Vector3d(0.0, 0.0, prob_distance);
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, 0.0, prob_distance);
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
-    if((desired_position - current_position).norm() < 0.02)
+    if((desired_position - current_position).norm() < 0.03)
     {
       delay_counter++;
       if (delay_counter > 20000)
       {
+        // cout << state << "pause " << link << endl;
+        // cin.get();
         cout << link << " finished positioning!!" << endl;
         state = 1;
         delay_counter = 0; 
@@ -1253,13 +1304,22 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     robot->linearVelocity(temp_finger_velocity, link, pos_in_link);
     velocity_record.pop_front();
     velocity_record.push_back(temp_finger_velocity.norm());
-    if (velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V)
+    if(velocity_record[1] < 0.003)
     {
+      static_counter++;
+    }
+    if ((velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V) || static_counter > 20000)
+    {
+      // cout << state << "pause " << link << static_counter << endl;
+      //   cin.get();
       state = 2;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
       cout<< "the previous velocity is: " << velocity_record[0] << endl;
       cout << "the current velocity is: " << velocity_record[1] << endl;
       contact_points.push_back(current_position);
+      static_counter = 0;
     }
   }
 
@@ -1271,11 +1331,13 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, 0.0, -prob_distance);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
-    if((desired_position - current_position).norm() < 0.02)
+    if((desired_position - current_position).norm() < 0.03)
     {
       delay_counter++;
       if (delay_counter > 20000)
       {
+        // cout << state << "pause " << link << endl;
+        // cin.get();
         cout << link << " finished positioning!!" << endl;
         state = 3;
         delay_counter = 0; 
@@ -1290,13 +1352,22 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     robot->linearVelocity(temp_finger_velocity, link, pos_in_link);
     velocity_record.pop_front();
     velocity_record.push_back(temp_finger_velocity.norm());
-    if (velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V)
+    if(velocity_record[1] < 0.003)
     {
+      static_counter++;
+    }
+    if ((velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V) || static_counter > 20000)
+    {
+      // cout << state << "pause " << link <<static_counter << endl;
+      //   cin.get();
       state = 4;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
       cout<< "the previous velocity is: " << velocity_record[0] << endl;
       cout << "the current velocity is: " << velocity_record[1] << endl;
       contact_points.push_back(current_position); 
+      static_counter = 0;
     }
   }
 
@@ -1312,11 +1383,13 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, prob_distance, 0.0);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
-    if((desired_position - current_position).norm() < 0.02)
+    if((desired_position - current_position).norm() < 0.03)
     {
       delay_counter++;
       if (delay_counter > 20000)
       {
+        // cout << state << "pause " << link << endl;
+        // cin.get();
         cout << link << " finished positioning!!" << endl;
         state = 5;
         delay_counter = 0; 
@@ -1331,15 +1404,24 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     robot->linearVelocity(temp_finger_velocity, link, pos_in_link);
     velocity_record.pop_front();
     velocity_record.push_back(temp_finger_velocity.norm());
-    if (velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V)
+    if(velocity_record[1] < 0.003)
     {
+      static_counter++;
+    }
+    if ((velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V) || static_counter > 20000)
+    {
+      // cout << state << "pause " << link << static_counter <<endl;
+      //   cin.get();
       state = 6;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
       cout<< "the previous velocity is: " << velocity_record[0] << endl;
       cout << "the current velocity is: " << velocity_record[1] << endl;
 
       contact_points.push_back(current_position); 
-      // cout << contact_points[100] << "test" << endl;   
+      // cout << contact_points[100] << "test" << endl; 
+      static_counter = 0;  
     }
   }
 
@@ -1356,11 +1438,13 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, -prob_distance, 0.0);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0);
-    if((desired_position - current_position).norm() < 0.02)
+    if((desired_position - current_position).norm() < 0.03)
     {
       delay_counter++;
       if (delay_counter > 20000)
       {
+        // cout << state << "pause " << link << endl;
+        // cin.get();
         cout << link << " finished positioning!!" << endl;
         state = 7;
         delay_counter = 0; 
@@ -1371,27 +1455,39 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   else if (state == 7) // has reached the fourth intermediate point
   {
     torque = compute_force_cmd_torques(robot, link, pos_in_link, CoM_of_object, SURFACE_FORCE);
+    // cout << torque << endl;
     Vector3d temp_finger_velocity = Vector3d::Zero();
     robot->linearVelocity(temp_finger_velocity, link, pos_in_link);
     velocity_record.pop_front();
     velocity_record.push_back(temp_finger_velocity.norm());
-    if (velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V)
+    if(velocity_record[1] < 0.003)
     {
+      static_counter++;
+    }
+    if ((velocity_record[1]/velocity_record[0] < CONTACT_COEFFICIENT && velocity_record[0] > MIN_COLLISION_V) || static_counter > 20000)
+    {
+      // cout << state << "pause " << link << static_counter <<endl;
+      //   cin.get();
       state = 8;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       cout << link <<" contact "<<endl;
       cout<< "the previous velocity is: " << velocity_record[0] << endl;
       cout << "the current velocity is: " << velocity_record[1] << endl;
 
       contact_points.push_back(current_position); 
-      // cout << contact_points[100] << "test" << endl;   
+      // cout << contact_points[100] << "test" << endl; 
+      static_counter = 0;  
     }
   }
 
   else if (state == 8) // go back to the original contact position
   {
     torque = compute_position_cmd_torques(robot, link, pos_in_link, original_pos, 100.0);
-    if((original_pos - current_position).norm() < 0.02)
+    if((original_pos - current_position).norm() < 0.01)
     {
+      // cout << state << "pause " << link << endl;
+      //   cin.get();
       cout << link << " arrived the original position" << endl;
       state = 9;
     }
@@ -1404,17 +1500,17 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Matrix3d coefficient_matrix = Matrix3d::Zero();
     Vector3d mean_position = Vector3d(0.0, 0.0, 0.0);
     vector<Vector3d> centralized_position = contact_points;
-    for (int j = 0; j < contact_points.size(); j++ )
+    for (unsigned int j = 0; j < contact_points.size(); j++ )
     {
       mean_position += contact_points[j];
       // cout << contact_points[j] <<endl<< endl;
     }
-    mean_position /= contact_points.size();
-    for (int j = 0; j < contact_points.size(); j++)
+    mean_position /= double(contact_points.size());
+    for (unsigned int j = 0; j < contact_points.size(); j++)
     {
       centralized_position[j] -= mean_position;
     }
-    for (int j = 0; j < contact_points.size(); j++)
+    for (unsigned int j = 0; j < contact_points.size(); j++)
     {
       coefficient_matrix += centralized_position[j] * centralized_position[j].transpose();
     }
