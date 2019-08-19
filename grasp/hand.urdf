@@ -199,12 +199,12 @@
 
     <link name="finger1-link3">
         <inertial>
-            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <origin xyz="0.0305 0 0" rpy="0 0 0"/>
             <mass value="0.047"/>
             <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -222,7 +222,7 @@
             </material>
         </visual>
         <collision>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -284,12 +284,12 @@
 
     <link name="finger2-link3">
         <inertial>
-            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <origin xyz="0.0305 0 0" rpy="0 0 0"/>
             <mass value="0.047"/>
             <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -307,7 +307,7 @@
             </material>
         </visual>
         <collision>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -369,12 +369,12 @@
 
     <link name="finger3-link3">
         <inertial>
-            <origin xyz="0.0327 0 0" rpy="0 0 0"/>
+            <origin xyz="0.0305 0 0" rpy="0 0 0"/>
             <mass value="0.047"/>
             <inertia ixx="0.00001"  iyy="0.00001" izz="0.00002" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -392,7 +392,7 @@
             </material>
         </visual>
         <collision>
-            <origin xyz="0.0327 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0305 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <sphere radius="0.014" />
             </geometry>
@@ -454,7 +454,7 @@
     <joint name="finger0-j0" type="revolute">
         <parent link="palm" />
         <child link="finger0-link0" />
-        <origin xyz="-0.0155 0.015 -0.008" rpy="0 0 -0.087"/>
+        <origin xyz="-0.0155 0.015 -0.008" rpy="0 0 0.087"/>
         <axis xyz="1 0 0" />
         <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
