@@ -134,7 +134,7 @@ double q_cube[] = {
 const bool dynamic_consistence_flag = true; // the flag which marks whether we should use dynamic consistence
 //  to maintain the original configurations
 const bool joint_saturation_flag = false;
-const double saturation_coefficient = 0.1;
+const double saturation_coefficient = 20;
 
 enum CustomGrasp {PreCubeGrasp, CubeGrasp};
 
@@ -246,7 +246,7 @@ const string robot_name = "Hand3Finger";
 #define CONTACT_COEFFICIENT     0.5 
 #define MIN_COLLISION_V         0.01
 #define FRICTION_COEFFICIENT     0.3
-#define SURFACE_FORCE           0.5   // the force used to detect the surface normal
+#define SURFACE_FORCE           0.2   // the force used to detect the surface normal
 // it could be 0.5, but for debug, let's use 1.5 for now
 
 #define PRE_GRASP               0
@@ -417,7 +417,7 @@ static void* sai2 (void * inst)
       // cout << current_finger_position[0] << endl << endl;
 
       //cout << "Here's the torque" << palm_command_torques << endl;
-      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.095), 100.0);
+      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.1), 100.0);
       temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, 0.055, -0.1), 100.0);
       temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.1), 100.0);
       temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, -0.045, -0.08), 100.0);
@@ -1231,7 +1231,7 @@ VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, 
     VectorXd satu_avoid_torque = VectorXd::Zero(dof);
     for ( int i = 0; i < dof; i++)
     {
-      satu_avoid_torque[i] = saturation_coefficient * (robot->_q[i] - 0.785);
+      satu_avoid_torque[i] = saturation_coefficient * (- robot->_q[i] + 0.785);
     }
     satu_avoid_torque[6] = 0;
     satu_avoid_torque[7] = 0;
@@ -1268,7 +1268,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   double local_displace_dis = displacement_dis;
   if (link == "finger0-link3")
   {
-    local_displace_dis = -displacement_dis;
+    local_displace_dis = -displacement_dis * 0.5;
   }
   // cout << state << endl;
   // cout << "Here is the contact point!!!!!" << contact_points[0] << endl << endl;
@@ -1314,6 +1314,8 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
       // cout << state << "pause " << link << static_counter << endl;
       //   cin.get();
       state = 2;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       velocity_record.pop_front();
       velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
@@ -1362,6 +1364,8 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
       // cout << state << "pause " << link <<static_counter << endl;
       //   cin.get();
       state = 4;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       velocity_record.pop_front();
       velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
@@ -1414,6 +1418,8 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
       // cout << state << "pause " << link << static_counter <<endl;
       //   cin.get();
       state = 6;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       velocity_record.pop_front();
       velocity_record.push_back(0.0);
       cout << link <<" contact"<<endl;
@@ -1470,6 +1476,8 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
       // cout << state << "pause " << link << static_counter <<endl;
       //   cin.get();
       state = 8;
+      velocity_record.pop_front();
+      velocity_record.push_back(0.0);
       velocity_record.pop_front();
       velocity_record.push_back(0.0);
       cout << link <<" contact "<<endl;
@@ -1545,7 +1553,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   }
   else if (state == 10) // maintain the original contact position
   {
-    torque = compute_position_cmd_torques(robot, link, pos_in_link, original_pos, 10.0);
+    torque = compute_position_cmd_torques(robot, link, pos_in_link, original_pos, 100.0);
   }
   return torque;
 }
