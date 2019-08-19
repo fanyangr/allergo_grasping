@@ -246,7 +246,8 @@ const string robot_name = "Hand3Finger";
 #define CONTACT_COEFFICIENT     0.5 
 #define MIN_COLLISION_V         0.01
 #define FRICTION_COEFFICIENT     0.3
-#define SURFACE_FORCE           1.5   // the force used to detect the surface normal
+#define SURFACE_FORCE           0.5   // the force used to detect the surface normal
+// it could be 0.5, but for debug, let's use 1.5 for now
 
 #define PRE_GRASP               0
 #define FINGER_MOVE_CLOSE       1
@@ -257,7 +258,7 @@ const string robot_name = "Hand3Finger";
 
 int state = PRE_GRASP;
 
-double prob_distance = 0.025; // how much you want the to prob laterally in normal detection step
+double prob_distance = 0.01; // how much you want the to prob laterally in normal detection step
 double displacement_dis = 0.04;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 
@@ -417,9 +418,9 @@ static void* sai2 (void * inst)
 
       //cout << "Here's the torque" << palm_command_torques << endl;
       temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.095), 100.0);
-      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, -0.041, -0.1), 100.0);
+      temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, 0.055, -0.1), 100.0);
       temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.1), 100.0);
-      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, 0.041, -0.08), 100.0);
+      temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, -0.045, -0.08), 100.0);
             
         // block the unrelated torques
         finger_command_torques[0].block(6,0,4,1) = temp_finger_command_torques[0].block(6,0,4,1);
@@ -455,7 +456,7 @@ static void* sai2 (void * inst)
       {
         if (finger_contact_flag[i] == 0)
         {
-          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 1.5);
+          temp_finger_command_torques[i] = compute_force_cmd_torques(robot, link_names[i], poses[i].translation(), CoM_of_object, 0.5);
           finger_command_torques[i].block(6+4*i,0,4,1) = temp_finger_command_torques[i].block(6 + 4 * i, 0, 4, 1);
           Vector3d temp_finger_velocity = Vector3d::Zero();
           robot->linearVelocity(temp_finger_velocity, link_names[i], poses[i].translation());
@@ -483,7 +484,7 @@ static void* sai2 (void * inst)
       // keep the position of fingers that are not used
       for (int j = NUM_OF_FINGERS_USED; j < NUM_OF_FINGERS_IN_MODEL; j++)
       {
-          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 100.0);
+          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, -0.041, -0.09), 100.0);
         finger_command_torques[j].block(6+4*j,0,4,1) = temp_finger_command_torques[j].block(6+4*j,0,4,1);
       }
 
@@ -521,7 +522,7 @@ static void* sai2 (void * inst)
 
       for (int j = NUM_OF_FINGERS_USED; j < NUM_OF_FINGERS_IN_MODEL; j++)
       {
-          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 100.0);
+          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.1, -0.045, -0.09), 100.0);
         finger_command_torques[j].block(6 + 4 * j, 0, 4, 1) = temp_finger_command_torques[j].block(6 + 4 * j,0,4,1);
       }
       //cout << sum_of_normal << endl;

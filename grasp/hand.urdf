@@ -8,7 +8,7 @@
         </inertial>
     </link>
 
-	<link name="virtual_link1">
+    <link name="virtual_link1">
         <inertial>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <mass value="0.001"/>
@@ -50,14 +50,14 @@
             <inertia ixx="0.0025"  iyy="0.002" izz="0.003" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.095 0.11 0.055" />
-	        </geometry>
-	        <material name="material_blue">
-		        <color rgba="0.5 0.5 0.7.0 1.0" />
-	        </material>
-	    </visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.095 0.11 0.055" />
+            </geometry>
+            <material name="material_blue">
+                <color rgba="0.5 0.5 0.7.0 1.0" />
+            </material>
+        </visual>
     </link>
 
 <!-- finger 0 -->
@@ -163,21 +163,21 @@
         </visual>
     </link>
 
-	<link name="finger1-link1">
+    <link name="finger1-link1">
         <inertial>
             <origin xyz="0.027 0 0" rpy="0 0 0"/>
             <mass value="0.0716"/>
             <inertia ixx="0.00003"  iyy="0.000084" izz="0.000088" ixy="0"  ixz="0" iyz="0"/>
         </inertial>
         <visual>
-	        <origin xyz="0.027 0.0 0.0" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.054 0.028 0.025" />
-	        </geometry>
-	        <material name="material_orange">
-		        <color rgba="0.9 0.6 0.1 1.0" />
-	        </material>
-	    </visual>
+            <origin xyz="0.027 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.054 0.028 0.025" />
+            </geometry>
+            <material name="material_orange">
+                <color rgba="0.9 0.6 0.1 1.0" />
+            </material>
+        </visual>
     </link>
 
     <link name="finger1-link2">
@@ -486,7 +486,7 @@
     <joint name="finger1-j0" type="revolute">
         <parent link="palm" />
         <child link="finger1-link0" />
-        <origin xyz="0.0475 -0.041 -0.015" rpy="0 0 0"/>
+        <origin xyz="0.0475 0.041 -0.015" rpy="0 0 0.0872"/>
         <axis xyz="1 0 0" />
         <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
@@ -552,7 +552,7 @@
     <joint name="finger3-j0" type="revolute">
         <parent link="palm" />
         <child link="finger3-link0" />
-        <origin xyz="0.0475 0.041 -0.015" rpy="0 0 0"/>
+        <origin xyz="0.0475 -0.041 -0.015" rpy="0 0 -0.0872"/>
         <axis xyz="1 0 0" />
         <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
