@@ -244,9 +244,9 @@ const string robot_name = "Hand3Finger";
 #define NUM_OF_FINGERS_IN_MODEL 4
 #define NUM_OF_FINGERS_USED     3
 
-#define CONTACT_COEFFICIENT     0.2 
+#define CONTACT_COEFFICIENT     0.0 
 #define MIN_COLLISION_V         0.01
-#define FRICTION_COEFFICIENT     0.0
+#define FRICTION_COEFFICIENT     0.5
 #define SURFACE_FORCE           0.2   // the force used to detect the surface normal
 // it could be 0.5, but for debug, let's use 1.5 for now
 
@@ -262,6 +262,7 @@ int state = PRE_GRASP;
 double prob_distance = 0.01; // how much you want the to prob laterally in normal detection step
 double displacement_dis = 0.03;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
+bool friction_compensation_flag = true;
 
 // the function used in the finger position control command
 VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, Vector3d pos_in_link, Vector3d desired_position, double kp);
@@ -308,7 +309,7 @@ static void* sai2 (void * inst)
   friction_compensation_pos << 0,0,0,0,0,0,
   0.0,0.0,0.0,0.0,
   0,0.06,0.04,0.025,
-  0,0.06,0.04,0.025,
+  0,0.06,0.04,0.035,
   0,0.06,0.04,0.025;
 
 
@@ -344,13 +345,15 @@ static void* sai2 (void * inst)
   poses.push_back(temp_pose);
   poses.push_back(temp_pose);
   poses.push_back(temp_pose);
+  // cout << poses[0].translation() << endl;
+  // cout << poses[1].translation() << endl;
 
   link_names.push_back("finger0-link3");
   link_names.push_back("finger1-link3");
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.19); // in the world frame
+  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.21); // in the world frame
   // Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.15); // in the world frame
   CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
   // vector<Vector3d> velocities;
@@ -430,7 +433,7 @@ static void* sai2 (void * inst)
         finger_command_torques[1].block(10,0,4,1) = temp_finger_command_torques[1].block(10,0,4,1);
         finger_command_torques[2].block(14,0,4,1) = temp_finger_command_torques[2].block(14,0,4,1);
         finger_command_torques[3].block(18,0,4,1) = temp_finger_command_torques[3].block(18,0,4,1);
-        cout << palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() << endl;
+        // cout << palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() << endl;
 
         if (palm_command_torques.norm() + finger_command_torques[0].norm() + finger_command_torques[1].norm() + finger_command_torques[2].norm() < 0.65)
         {
@@ -465,8 +468,13 @@ static void* sai2 (void * inst)
           robot->linearVelocity(temp_finger_velocity, link_names[i], poses[i].translation());
           velocity_record[i].pop_front();
           velocity_record[i].push_back(temp_finger_velocity.norm());
-          if (velocity_record[i][1]/velocity_record[i][0] < 0.6 && velocity_record[i][0] > MIN_COLLISION_V)
+          if (velocity_record[1] < 0.003)
           {
+            static_counter[i] += 1;
+          }
+          if ((velocity_record[i][1]/velocity_record[i][0] < CONTACT_COEFFICIENT && velocity_record[i][0] > MIN_COLLISION_V)||static_counter[i] > 20000)
+          {
+            static_counter[i] = 0;
             cout <<"finger "<< i <<" contact"<<endl;
             cout << "the previous velocity is: " << velocity_record[i][0] << endl;
             cout << "the current velocity is: " << velocity_record[i][1] << endl;
@@ -556,6 +564,10 @@ static void* sai2 (void * inst)
       // check whether we can achieve 2 finger contact.
       if (check_2_finger_grasp(current_finger_position, normals, FRICTION_COEFFICIENT))
         {state = APPLY_FORCE;}
+      else
+      {
+        state = APPLY_FORCE;
+      }
 
 
     }
@@ -575,7 +587,7 @@ static void* sai2 (void * inst)
 
       for (int j = NUM_OF_FINGERS_USED; j < NUM_OF_FINGERS_IN_MODEL; j++)
       {
-          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, 0.041, -0.09), 10.0);
+          temp_finger_command_torques[j] = compute_position_cmd_torques(robot, link_names[j], poses[j].translation(), Vector3d(0.15, -0.041, -0.09), 10.0);
         finger_command_torques[j].block(6+4*j,0,4,1) = temp_finger_command_torques[j].block(6+4*j,0,4,1);
       }
     }
@@ -584,11 +596,14 @@ static void* sai2 (void * inst)
 
   command_torques = finger_command_torques[0] + finger_command_torques[1] \
   + finger_command_torques[2] + finger_command_torques[3];
-  for (int i = 0; i < dof; i++)
+  if (friction_compensation_flag == true)
   {
-    if (command_torques[i] > 0)
+    for (int i = 0; i < dof; i++)
     {
-      command_torques[i] += friction_compensation_pos[i];
+      if (command_torques[i] > 0)
+      {
+        command_torques[i] += friction_compensation_pos[i];
+      }
     }
   }
     // command_torques << 0,0,0,0,0,0,
