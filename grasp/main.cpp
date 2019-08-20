@@ -18,6 +18,7 @@
 #include <vector>
 #include <deque>
 #include <unistd.h>
+#include <fstream>
 
 using namespace std;
 using namespace Eigen;
@@ -243,9 +244,9 @@ const string robot_name = "Hand3Finger";
 #define NUM_OF_FINGERS_IN_MODEL 4
 #define NUM_OF_FINGERS_USED     3
 
-#define CONTACT_COEFFICIENT     0.5 
+#define CONTACT_COEFFICIENT     0.2 
 #define MIN_COLLISION_V         0.01
-#define FRICTION_COEFFICIENT     0.3
+#define FRICTION_COEFFICIENT     0.0
 #define SURFACE_FORCE           0.2   // the force used to detect the surface normal
 // it could be 0.5, but for debug, let's use 1.5 for now
 
@@ -259,7 +260,7 @@ const string robot_name = "Hand3Finger";
 int state = PRE_GRASP;
 
 double prob_distance = 0.01; // how much you want the to prob laterally in normal detection step
-double displacement_dis = 0.04;  // how much you wanna move awat from the original point in normal detection step
+double displacement_dis = 0.03;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 
 // the function used in the finger position control command
@@ -292,6 +293,8 @@ static void* sai2 (void * inst)
   signal(SIGABRT, &sighandler);
   signal(SIGTERM, &sighandler);
   signal(SIGINT, &sighandler);
+
+  ofstream output;
 
 
   Sai2Model::Sai2Model* robot = new Sai2Model::Sai2Model(robot_file, false);
@@ -337,7 +340,7 @@ static void* sai2 (void * inst)
   Affine3d temp_pose = Affine3d::Identity();
   temp_pose.translation() = Vector3d(0.0507,0.0,0.0);
   poses.push_back(temp_pose);
-  temp_pose.translation() = Vector3d(0.0327, 0.0, 0.0);
+  temp_pose.translation() = Vector3d(0.0305, 0.0, 0.0); //0.0305
   poses.push_back(temp_pose);
   poses.push_back(temp_pose);
   poses.push_back(temp_pose);
@@ -529,6 +532,19 @@ static void* sai2 (void * inst)
       if(sum_of_normal > double(NUM_OF_FINGERS_USED)-0.5)
       {
         cout << "all the normals detected" << endl;
+        output.open("output.txt");
+        for ( int i = 0; i < NUM_OF_FINGERS_USED; i++)
+        {
+          for ( int j = 0; j < contact_points[i].size() ; j++)
+          {
+            for (int k = 0; k < 3; k++)
+            {
+              output << contact_points[i][j][k]<<endl;
+            }
+          }
+        }
+        output.close();
+
         state = CHECK;
       }
 
