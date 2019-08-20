@@ -468,7 +468,7 @@ static void* sai2 (void * inst)
           robot->linearVelocity(temp_finger_velocity, link_names[i], poses[i].translation());
           velocity_record[i].pop_front();
           velocity_record[i].push_back(temp_finger_velocity.norm());
-          if (velocity_record[1] < 0.003)
+          if (velocity_record[i][1] < 0.003)
           {
             static_counter[i] += 1;
           }
