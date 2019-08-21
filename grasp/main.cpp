@@ -247,7 +247,7 @@ const string robot_name = "Hand3Finger";
 #define CONTACT_COEFFICIENT     0.0 
 #define MIN_COLLISION_V         0.01
 #define FRICTION_COEFFICIENT     0.5
-#define SURFACE_FORCE           0.2   // the force used to detect the surface normal
+#define SURFACE_FORCE           0.5   // the force used to detect the surface normal
 // it could be 0.5, but for debug, let's use 1.5 for now
 
 #define PRE_GRASP               0
@@ -259,7 +259,7 @@ const string robot_name = "Hand3Finger";
 
 int state = PRE_GRASP;
 
-double prob_distance = 0.01; // how much you want the to prob laterally in normal detection step
+double prob_distance = 0.02; // how much you want the to prob laterally in normal detection step
 double displacement_dis = 0.03;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 bool friction_compensation_flag = true;
@@ -353,7 +353,7 @@ static void* sai2 (void * inst)
   link_names.push_back("finger2-link3");
   link_names.push_back("finger3-link3");
 
-  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.21); // in the world frame
+  Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.19); // in the world frame
   // Vector3d CoM_of_object = Vector3d(-0.03, -0.01,0.15); // in the world frame
   CoM_of_object -= Vector3d(0.0, 0.0, 0.27); // transform into the robor frame
   // vector<Vector3d> velocities;
