@@ -125,7 +125,8 @@ double q_cube[] = {
   1.65, -0.25, 0.0, 0.8
 };
 
- double origin_config[] = {
+ double origin_config[] =
+{
   0.0, 0.7, 0.7, 0.7,
   0.0, 0.7, 0.7, 0.7,
   0.0, 0.7, 0.7, 0.7,
@@ -276,14 +277,14 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
 bool check_2_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
 bool check_3_finger_grasp(vector<Vector3d> contact_points,vector<Vector3d> normals, double friction_coefficient);
 
-// vector< deque<Vector3d> > position_recorder;
-// deque<Vector3d> initial_queue;
-// initial_queue.push_back(Vector3d(0.0, 0.0, 0.0));
-// initial_queue.push_back(Vector3d(1.0, 1.0, 1.0));
-// for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
-// {
-//   position_recorder.push_back(initial_queue);
-// }
+/*vector< deque<Vector3d> > position_recorder;
+deque<Vector3d> initial_queue;
+initial_queue.push_back(Vector3d(0.0, 0.0, 0.0));
+initial_queue.push_back(Vector3d(1.0, 1.0, 1.0));
+for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
+{
+  position_recorder.push_back(initial_queue);
+}*/
 
 
 // ----------------------------------------------------------------------------------------------
@@ -402,7 +403,7 @@ static void* sai2 (void * inst)
     // cout <<"dq" << robot->_dq << endl << endl;
     
     robot->updateModel();
-/*    if (loop_counter % 200 == 0)
+    /*    if (loop_counter % 200 == 0)
     {
       for (int i = 0; i < NUM_OF_FINGERS_USED; i++)
       {
@@ -751,8 +752,8 @@ static void* ioThreadProc(void* inst)
 	      }
 
 		    // send torques
-		    for (int i=0; i<4;i++)
-		      {
+	    for (int i=0; i<4;i++)
+	      {
 			// the index order for motors is different from that of encoders
 			switch (HAND_VERSION)
 			  {
