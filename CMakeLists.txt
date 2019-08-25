@@ -15,7 +15,7 @@ FIND_PACKAGE(SAI2-URDF REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
 
 # - hiredis
- #find_library(HIREDIS_LIBRARY hiredis)
+# find_library(HIREDIS_LIBRARY hiredis)
 # - SAI2-COMMON
 find_package(SAI2-COMMON REQUIRED)
 include_directories(${SAI2-COMMON_INCLUDE_DIRS})

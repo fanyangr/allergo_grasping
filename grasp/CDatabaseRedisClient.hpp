@@ -130,3 +130,4 @@ private:
 };
 
 #endif //CDATABASEREDISCLIENT_H
+
