@@ -267,9 +267,9 @@ const string SCORE_KEY = "score_key";
 #define CONTACT_COEFFICIENT     0.0 
 #define MIN_COLLISION_V         0.01
 #define FRICTION_COEFFICIENT    0.5
-#define SURFACE_FORCE           0.2   // the force used to detect the surface normal
+#define SURFACE_FORCE           0.3   // the force used to detect the surface normal
 // it could be 0.5, but for debug, let's use 1.5 for now
-#define STATIC_THRESHOLD        0.005
+#define STATIC_THRESHOLD        0.004
 
 #define PRE_GRASP               0
 #define FINGER_MOVE_CLOSE       1
@@ -282,8 +282,8 @@ const string SCORE_KEY = "score_key";
 
 int state = PRE_GRASP;
 
-double prob_distance = 0.02; // how much you want the to prob laterally in normal detection step
-double displacement_dis = 0.03;  // how much you wanna move awat from the original point in normal detection step
+double prob_distance = 0.015; // how much you want the to prob laterally in normal detection step
+double displacement_dis = 0.02;  // how much you wanna move awat from the original point in normal detection step
 int delay_counter = 0;  // the counter used to delay the state transistion, which is better than sleep function
 bool friction_compensation_flag = true;
 Vector3d CoM_of_object = Vector3d(0.03, 0.02,0.17) - Vector3d(0.0, 0.0, 0.27); // in the world frame minus robot frame
@@ -365,7 +365,7 @@ static void* sai2 (void * inst)
   int dof = robot->dof();
   VectorXd friction_compensation_pos = VectorXd::Zero(dof);
   friction_compensation_pos << 0,0,0,0,0,0,
-  0.0,0.0,0.03,0.03,
+  0.0,0.0,0.0,0.0,
   0,0.06,0.04,0.025,
   0,0.06,0.04,0.035,
   0,0.06,0.04,0.025;
@@ -449,8 +449,6 @@ static void* sai2 (void * inst)
   long long int loop_counter = 0;
 
 
-
-  // cout << robot->_joint_names_map["finger0-j0"] << "!!!!!!!!!!!!!!!!!!!!!!!" <<endl;
   while(runloop)
   {
     // timer.waitForNextLoop();
@@ -480,7 +478,7 @@ static void* sai2 (void * inst)
       // cout << current_finger_position[0] << endl << endl;
 
       //cout << "Here's the torque" << palm_command_torques << endl;
-      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.1), 100.0, i_errors[0]);
+      temp_finger_command_torques[0] = compute_position_cmd_torques(robot, link_names[0], poses[0].translation(), Vector3d(-0.03, 0.03, -0.11), 100.0, i_errors[0]);
       temp_finger_command_torques[1] = compute_position_cmd_torques(robot, link_names[1], poses[1].translation(), Vector3d(0.1, 0.055, -0.12), 100.0, i_errors[1]);
       temp_finger_command_torques[2] = compute_position_cmd_torques(robot, link_names[2], poses[2].translation(), Vector3d(0.1, 0.0, -0.12), 100.0, i_errors[2]);
       temp_finger_command_torques[3] = compute_position_cmd_torques(robot, link_names[3], poses[3].translation(), Vector3d(0.1, -0.065, -0.07), 100.0);
@@ -1423,7 +1421,7 @@ VectorXd compute_position_cmd_torques(Sai2Model::Sai2Model* robot, string link, 
   // double kp = 10;
 
   double kv = kp/50;
-  double ki = 0.002;
+  double ki = 0.003;
   int dof = robot->dof();
   Vector3d current_position; // in robot frame
   Vector3d current_velocity;
@@ -1509,7 +1507,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
   //   cout << "current" << endl << current_position<<endl << endl;
   //   cout << "desired" << endl << desired_position << endl << endl;
   // }
-    if((desired_position - current_position).norm() < 0.03)
+    if((desired_position - current_position).norm() < 0.01)
     {
       delay_counter++;
       if (delay_counter > 20000)
@@ -1559,7 +1557,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, 0.0, -prob_distance);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0, i_error);
-    if((desired_position - current_position).norm() < 0.03)
+    if((desired_position - current_position).norm() < 0.02)
     {
       delay_counter++;
       if (delay_counter > 20000)
@@ -1613,7 +1611,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, prob_distance, 0.0);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0, i_error);
-    if((desired_position - current_position).norm() < 0.03)
+    if((desired_position - current_position).norm() < 0.02)
     {
       delay_counter++;
       if (delay_counter > 20000)
@@ -1670,7 +1668,7 @@ VectorXd detect_surface_normal(Sai2Model::Sai2Model* robot, string link, Vector3
     Vector3d desired_position = local_displace_dis * Vector3d(1.0,0.0,0.0) + original_pos + Vector3d(0.0, -prob_distance, 0.0);
 
     torque = compute_position_cmd_torques(robot, link, pos_in_link, desired_position, 100.0, i_error);
-    if((desired_position - current_position).norm() < 0.03)
+    if((desired_position - current_position).norm() < 0.02)
     {
       delay_counter++;
       if (delay_counter > 20000)

@@ -518,7 +518,7 @@
     <joint name="finger1-j0" type="revolute">
         <parent link="palm" />
         <child link="finger1-link0" />
-        <origin xyz="0.0475 0.041 -0.015" rpy="0 0 0.0872"/>
+        <origin xyz="0.0455 0.041 -0.015" rpy="0 0 0.0872"/>
         <axis xyz="1 0 0" />
         <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
@@ -584,7 +584,7 @@
     <joint name="finger3-j0" type="revolute">
         <parent link="palm" />
         <child link="finger3-link0" />
-        <origin xyz="0.0475 -0.041 -0.015" rpy="0 0 -0.0872"/>
+        <origin xyz="0.0455 -0.041 -0.015" rpy="0 0 -0.0872"/>
         <axis xyz="1 0 0" />
         <limit lower="-2.967" upper="2.967" effort="176" velocity="1.7104" />
     </joint>
