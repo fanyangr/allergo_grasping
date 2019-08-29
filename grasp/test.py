@@ -38,31 +38,32 @@ def optimize():
 	g = 9.87
 	if start_flag == True:
 		# values needed to be received from redis
-		x1 = json.loads(server.get(CONTACT_POSITION_1_KEY).decode("utf-8"))
-		x2 = json.loads(server.get(CONTACT_POSITION_2_KEY).decode("utf-8"))
-		x3 = json.loads(server.get(CONTACT_POSITION_3_KEY).decode("utf-8"))
-		n1 = json.loads(server.get(CONTACT_NORMAL_1_KEY).decode("utf-8"))		
-		n2 = json.loads(server.get(CONTACT_NORMAL_2_KEY).decode("utf-8"))
-		n3 = json.loads(server.get(CONTACT_NORMAL_3_KEY).decode("utf-8"))
-		m = json.loads(server.get(MASS_KEY).decode("utf-8"))
-		com = json.loads(server.get(COM_KEY).decode("utf-8"))
-		x1 = np.array(x1)
-		x2 = np.array(x2)
-		x3 = np.array(x3)
-		n1 = np.array(n1)
-		n2 = np.array(n2)
-		n3 = np.array(n3)
-		com = np.array(com)
-		m = float(m)
+		# x1 = json.loads(server.get(CONTACT_POSITION_1_KEY).decode("utf-8"))
+		# x2 = json.loads(server.get(CONTACT_POSITION_2_KEY).decode("utf-8"))
+		# x3 = json.loads(server.get(CONTACT_POSITION_3_KEY).decode("utf-8"))
+		# n1 = json.loads(server.get(CONTACT_NORMAL_1_KEY).decode("utf-8"))		
+		# n2 = json.loads(server.get(CONTACT_NORMAL_2_KEY).decode("utf-8"))
+		# n3 = json.loads(server.get(CONTACT_NORMAL_3_KEY).decode("utf-8"))
+		# m = json.loads(server.get(MASS_KEY).decode("utf-8"))
+		# com = json.loads(server.get(COM_KEY).decode("utf-8"))
+		# x1 = np.array(x1)
+		# x2 = np.array(x2)
+		# x3 = np.array(x3)
+		# n1 = np.array(n1)
+		# n2 = np.array(n2)
+		# n3 = np.array(n3)
+		# com = np.array(com)
+		# m = float(m)
 
-		# m = 1
-		# x1 = np.array([0,0,3])
-		# x2 = np.array([2,2,3])
-		# x3 = np.array([2,-2,3])
-		# n1 = np.array([1,0,0])
-		# n2 = np.array([-1,0,0])
-		# n3 = np.array([-1,0,0])
-		# com = np.array([1,0,3])
+
+		m = 1
+		x1 = np.array([0,0,3])
+		x2 = np.array([2,2,3])
+		x3 = np.array([2,-2,3])
+		n1 = np.array([1,0,0])
+		n2 = np.array([-1,0,0])
+		n3 = np.array([-1,0,0])
+		com = np.array([1,0,3])
 
 		r1 = x1 - com
 		r2 = x2 - com 
@@ -74,6 +75,7 @@ def optimize():
 		f1 = cp.Variable(3)
 		f2 = cp.Variable(3)
 		f3 = cp.Variable(3)
+
 		f1_lateral = f1 - f1 * n1 * n1
 		f2_lateral = f2 - f2 * n2 * n2
 		f3_lateral = f3 - f3 * n3 * n3
@@ -81,13 +83,12 @@ def optimize():
 		zero = np.zeros(3)
 
 		gravity[2] = m * g
-
 		constraints = [f1 + f2 + f3 == gravity, r1_m * f1 + r2_m * f2 + r3_m * f3 == zero, f1 * n1 >= 0, f2 * n2 >= 0, f3 * n3 >= 0\
 		, cp.norm(f1_lateral) <= coefficient_of_friction * f1 * n1, cp.norm(f2_lateral) <= coefficient_of_friction * f2 * n2, cp.norm(f3_lateral) <= coefficient_of_friction * f3 * n3]
 		# obj = cp.Minimize(1/cp.norm(f1))
 		obj = cp.Minimize((cp.norm((f1 - f1 * n1 * n1))) + cp.norm((f2 - f2 * n2 * n2)) + cp.norm((f3 - f3 * n3 * n3)) +\
 		 0.1 * (cp.norm(f1) + cp.norm(f2) + cp.norm(f3)))
-
+		# obj = cp.Minimize(cp.norm(f1) + cp.norm(f2) + cp.norm(f3))
 		prob = cp.Problem(obj, constraints)
 		prob.solve()
 		print("status:", prob.status)
@@ -103,6 +104,6 @@ def optimize():
 if __name__ == "__main__":
 	print("The python code for the optimization is running!")
 	server = redis.Redis()
-	# server.set(PYTHON_START_FLAG_KEY, json.dumps(True))
+	server.set(PYTHON_START_FLAG_KEY, json.dumps(True))
 	while True:
 		optimize()
