@@ -18,7 +18,7 @@ FORCE_3_KEY = "force_3_key"
 MASS_KEY = "mass_key"
 COM_KEY = "com_key"
 SCORE_KEY = "score_key"
-coefficient_of_friction = 1
+coefficient_of_friction = 0.5
 
 
 def cross_into_matrix(a):
@@ -54,6 +54,7 @@ def optimize():
 		# n3 = np.array(n3)
 		# com = np.array(com)
 		# m = float(m)
+		iter_coefficient_of_friction = coefficient_of_friction
 
 
 		m = 1
@@ -83,14 +84,24 @@ def optimize():
 		zero = np.zeros(3)
 
 		gravity[2] = m * g
-		constraints = [f1 + f2 + f3 == gravity, r1_m * f1 + r2_m * f2 + r3_m * f3 == zero, f1 * n1 >= 0, f2 * n2 >= 0, f3 * n3 >= 0\
-		, cp.norm(f1_lateral) <= coefficient_of_friction * f1 * n1, cp.norm(f2_lateral) <= coefficient_of_friction * f2 * n2, cp.norm(f3_lateral) <= coefficient_of_friction * f3 * n3]
-		# obj = cp.Minimize(1/cp.norm(f1))
-		obj = cp.Minimize((cp.norm((f1 - f1 * n1 * n1))) + cp.norm((f2 - f2 * n2 * n2)) + cp.norm((f3 - f3 * n3 * n3)) +\
-		 0.1 * (cp.norm(f1) + cp.norm(f2) + cp.norm(f3)))
-		# obj = cp.Minimize(cp.norm(f1) + cp.norm(f2) + cp.norm(f3))
-		prob = cp.Problem(obj, constraints)
-		prob.solve()
+		iter_counter = 0
+		while iter_counter < 8:
+			constraints = [f1 + f2 + f3 == gravity, r1_m * f1 + r2_m * f2 + r3_m * f3 == zero, f1 * n1 >= 0, f2 * n2 >= 0, f3 * n3 >= 0\
+			, cp.norm(f1_lateral) <= iter_coefficient_of_friction * f1 * n1, cp.norm(f2_lateral) <= iter_coefficient_of_friction * f2 * n2, cp.norm(f3_lateral) <= iter_coefficient_of_friction * f3 * n3]
+			# obj = cp.Minimize(1/cp.norm(f1))
+			obj = cp.Minimize((cp.norm((f1 - f1 * n1 * n1))) + cp.norm((f2 - f2 * n2 * n2)) + cp.norm((f3 - f3 * n3 * n3))\
+				+ 0.1 * (cp.norm(f1) + cp.norm(f2) + cp.norm(f3)))
+
+			prob = cp.Problem(obj, constraints)
+			print("This is the contact points for the thumb: ")
+			print(x1)
+			prob.solve()
+			if prob.status in ["infeasible", "unbounded"]:
+				iter_coefficient_of_friction *= 1.2
+				iter_counter += 1 
+				print("fail. try with mu: ", iter_coefficient_of_friction)
+			else: 
+				break
 		print("status:", prob.status)
 		print("optimal value", prob.value)
 		print("optimal var", f1.value, f2.value, f3.value)
