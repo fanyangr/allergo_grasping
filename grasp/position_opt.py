@@ -18,7 +18,7 @@ FORCE_3_KEY = "force_3_key"
 MASS_KEY = "mass_key"
 COM_KEY = "com_key"
 SCORE_KEY = "score_key"
-coefficient_of_friction = 1
+coefficient_of_friction = 5
 
 
 def cross_into_matrix(a):
@@ -74,6 +74,16 @@ def optimize():
 		f1 = cp.Variable(3)
 		f2 = cp.Variable(3)
 		f3 = cp.Variable(3)
+		# print("r:")
+		# print(r1)
+		# print(r2)
+		# print(r3)
+		# print("normals:")
+		# print(n1)
+		# print(n2)
+		# print(n3)
+		# print("m:")
+		# print(m)
 		f1_lateral = f1 - f1 * n1 * n1
 		f2_lateral = f2 - f2 * n2 * n2
 		f3_lateral = f3 - f3 * n3 * n3
@@ -85,14 +95,16 @@ def optimize():
 		constraints = [f1 + f2 + f3 == gravity, r1_m * f1 + r2_m * f2 + r3_m * f3 == zero, f1 * n1 >= 0, f2 * n2 >= 0, f3 * n3 >= 0\
 		, cp.norm(f1_lateral) <= coefficient_of_friction * f1 * n1, cp.norm(f2_lateral) <= coefficient_of_friction * f2 * n2, cp.norm(f3_lateral) <= coefficient_of_friction * f3 * n3]
 		# obj = cp.Minimize(1/cp.norm(f1))
-		obj = cp.Minimize((cp.norm((f1 - f1 * n1 * n1))) + cp.norm((f2 - f2 * n2 * n2)) + cp.norm((f3 - f3 * n3 * n3)) +\
-		 0.1 * (cp.norm(f1) + cp.norm(f2) + cp.norm(f3)))
+		obj = cp.Minimize((cp.norm((f1 - f1 * n1 * n1))) + cp.norm((f2 - f2 * n2 * n2)) + cp.norm((f3 - f3 * n3 * n3))\
+			+ 0.1 * (cp.norm(f1) + cp.norm(f2) + cp.norm(f3)))
 
 		prob = cp.Problem(obj, constraints)
 		prob.solve()
 		print("status:", prob.status)
 		print("optimal value", prob.value)
 		print("optimal var", f1.value, f2.value, f3.value)
+		# print("the net torque is: ")
+		# print(r1_m * f1.value + r2_m * f2.value + r3_m * f3.value)
 		server.set(SCORE_KEY, json.dumps(prob.value))
 		server.set(PYTHON_START_FLAG_KEY, json.dumps(0))
 		server.set(FORCE_1_KEY, json.dumps(list(f1.value)))
