@@ -1,8 +1,5 @@
-//
-// 20141209: kcchang: changed window version to linux 
-
-// myAllegroHand.cpp : Defines the entry point for the console application.
-//
+// the code is coded by Fan in Aug 2019,
+// adapted from the Allegro hand control code by Mikael
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -586,8 +583,7 @@ static void* sai2 (void * inst)
         // finger_command_torques[j].block(6 + 4 * j, 0, 4, 1) = temp_finger_command_torques[j].block(6 + 4 * j,0,4,1);
       }
       finger_command_torques = block_torque(temp_finger_command_torques);
-      
-      //cout << sum_of_normal << endl;
+
       if(sum_of_normal > (double(NUM_OF_FINGERS_USED) - 1 - 0.5))
       {
         cout << "all the other normals detected" << endl;
@@ -596,6 +592,7 @@ static void* sai2 (void * inst)
           normals[1] = Vector3d(-1.0, 0.0, 0.0);
           normals[2] = Vector3d(-1.0, 0.0, 0.0); 
         }
+        // this part is to write the results into a txt file, and we have a python code to visualise the result.
         output.open("output.txt");
         for ( int i = 1; i < NUM_OF_FINGERS_USED; i++)
         {
@@ -675,7 +672,6 @@ static void* sai2 (void * inst)
         bool python_start_flag = stoi(redis_cli.reply_->str);
         if (python_start_flag == false)  // which means the python code is ready to receive any message
         {
-          // cout << "!!!!!!!!!!!!!!!"<< i <<endl;
           vector<Vector3d> contact_positions_sent;
           contact_positions_sent.push_back(contact_points[0][i]); // the thumb position
           for (int j = 1; j < NUM_OF_FINGERS_USED; j++)  // other-finger positions 
@@ -704,9 +700,6 @@ static void* sai2 (void * inst)
           redis_cli.getEigenMatrixDerived(FORCE_1_KEY, forces_candidates[i][0]);
           redis_cli.getEigenMatrixDerived(FORCE_2_KEY, forces_candidates[i][1]);
           redis_cli.getEigenMatrixDerived(FORCE_3_KEY, forces_candidates[i][2]);
-          // cout << forces_candidates[i][0] << endl;
-          // cout << forces_candidates[i][1] << endl;
-          // cout << forces_candidates[i][2] << endl;
 
           i++;
         }
@@ -749,7 +742,7 @@ static void* sai2 (void * inst)
       }
       else if (reprob_times >= 5)
       {
-        cout << "has reprobed to many times, just random give it a shot" << endl;
+        cout << "has reprobed too many times, just randomly give it a shot" << endl;
         optimal_positions[0] = contact_points[0][0];
         optimal_forces = forces_candidates[0];        
         CoM_of_object = (2 * current_finger_position[0] + current_finger_position[1] + current_finger_position[2]) / 4;
